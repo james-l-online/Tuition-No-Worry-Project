@@ -16,7 +16,7 @@ export default function Layout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>testing{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
