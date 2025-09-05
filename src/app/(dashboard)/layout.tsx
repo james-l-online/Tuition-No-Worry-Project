@@ -21,7 +21,7 @@ export default function DashboardLayout({
         <Menu/>
       </div>  
       {/* RIGHT */}
-      <div className='w-[86%] md:[92%] lg:w-[84%] xl:w-[86%] bg-[#c5d0e8] overflow-scroll'>
+      <div className='w-[86%] md:[92%] lg:w-[84%] xl:w-[86%] bg-[#cbcdd2] overflow-scroll'>
         <Navbar/>
         <div>{children}</div>       
       </div>

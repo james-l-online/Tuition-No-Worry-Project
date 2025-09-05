@@ -4,13 +4,15 @@ import React from 'react'
 
 const UserCard = ({type}:{type:string}) => {
   return (
-    <div className='rounded-2xl odd:bg-lamaPurple even:bg-lamaYellow p-4 flex-1'>
-      <div className="">
-        <span>2025/26</span>
+    <div className='rounded-2xl odd:bg-lamaPurple even:bg-lamaYellow p-4 flex-1 min-w-[130px]'>
+      <div className="flex justify-between items-center">
+        <span className='text-[10px] bg-white px-2 py-1 rounded-full text-green-500'>
+          2025/26
+        </span>
         <Image src="/more.png" alt="" width={20} height={20}/>
       </div>
-      <h1>1,234</h1>
-      <h2>stgvavs</h2>
+      <h1 className='text-2sl font-semibold my-4'>1234</h1>
+      <h2 className='capitalize text-sm font-medium text-gray-600'>{type}<span className="lowercase">s</span></h2>
     </div>
   )
 }
