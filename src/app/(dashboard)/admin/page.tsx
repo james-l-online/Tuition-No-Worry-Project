@@ -32,13 +32,13 @@ const AdminPage = () => {
       <div className="w-full h-[500px]">
         <FinanceChart /> 
       </div>
-
       </div>
       {/* RIGHT */}
-      <div className="" flex flex-col gap-8></div>
+      <div className="lg:w-1/3" flex flex-col gap-8>
       <EventCalendar />
       <Announcement />
     </div>
+  </div>
   );
 };
 
