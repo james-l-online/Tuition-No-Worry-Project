@@ -11,9 +11,13 @@ import { useState } from "react";
 
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
   loading: () => <h1>Loading...</h1>,
+  // Ensure this client component is never server-rendered
+  ssr: false,
 });
 const StudentForm = dynamic(() => import("./forms/StudentForm"), {
   loading: () => <h1>Loading...</h1>,
+  // Ensure this client component is never server-rendered
+  ssr: false,
 });
 
 const forms: {
@@ -73,13 +77,25 @@ const FormModal = ({
     );
   };
 
+  const iconForType = (t: "create" | "update" | "delete") => {
+    switch (t) {
+      case "create":
+        return "/plus.png";
+      case "update":
+        return "/edit.png";
+      case "delete":
+      default:
+        return "/delete.png";
+    }
+  };
+
   return (
     <>
       <button
         className={`${size} flex items-center justify-center rounded-full ${bgColor}`}
         onClick={() => setOpen(true)}
       >
-        <Image src={`/${type}.png`} alt="" width={16} height={16} />
+        <Image src={iconForType(type)} alt="" width={16} height={16} />
       </button>
       {open && (
         <div className="w-screen h-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
