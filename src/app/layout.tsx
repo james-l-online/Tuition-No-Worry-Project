@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Next.js School Management System",
 };
 
-export default function Layout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
