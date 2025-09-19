@@ -1,11 +1,9 @@
-// import FormModal from "@/components/FormModal";
+import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role, classesData } from "@/lib/data";
-import { CLIENT_STATIC_FILES_RUNTIME_AMP } from "next/dist/shared/lib/constants";
+import { classesData, role } from "@/lib/data";
 import Image from "next/image";
-import Link from "next/link";
 
 type Class = {
   id: number;
@@ -13,7 +11,6 @@ type Class = {
   capacity: number;
   grade: number;
   supervisor: string;
-
 };
 
 const columns = [
@@ -22,14 +19,14 @@ const columns = [
     accessor: "name",
   },
   {
-    header: "Capcity",
+    header: "Capacity",
     accessor: "capacity",
+    className: "hidden md:table-cell",
   },
   {
-    header:"Grade",
+    header: "Grade",
     accessor: "grade",
     className: "hidden md:table-cell",
-
   },
   {
     header: "Supervisor",
@@ -42,7 +39,7 @@ const columns = [
   },
 ];
 
-const classesPage = () => {
+const ClassListPage = () => {
   const renderRow = (item: Class) => (
     <tr
       key={item.id}
@@ -52,22 +49,13 @@ const classesPage = () => {
       <td className="hidden md:table-cell">{item.capacity}</td>
       <td className="hidden md:table-cell">{item.grade}</td>
       <td className="hidden md:table-cell">{item.supervisor}</td>
-      
-      {/* <td className="hidden md:table-cell">{item.students.join(',')}</td> */}
-      {/* <td className="hidden md:table-cell">{item.phone}</td>
-      <td className="hidden md:table-cell">{item.address}</td> */}
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/teachers/${item.id}`}>
-            <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-              <Image src="/edit.png" alt="" width={16} height={16} />
-            </button>
-          </Link>
           {role === "admin" && (
-            <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
-              <Image src="/delete.png" alt="" width={16} height={16} />
-            </button>
-            // <FormModal table="teacher" type="delete" id={item.id}/>
+            <>
+              <FormModal table="class" type="update" data={item} />
+              <FormModal table="class" type="delete" id={item.id} />
+            </>
           )}
         </div>
       </td>
@@ -88,12 +76,7 @@ const classesPage = () => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && (
-              <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-                <Image src="/plus.png" alt="" width={14} height={14} />
-              </button>
-              // <FormModal table="teacher" type="create"/>
-            )}
+            {role === "admin" && <FormModal table="class" type="create" />}
           </div>
         </div>
       </div>
@@ -105,4 +88,4 @@ const classesPage = () => {
   );
 };
 
-export default classesPage;
+export default ClassListPage;
