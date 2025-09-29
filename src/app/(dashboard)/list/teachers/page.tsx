@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
 
-type TeacherList = Teacher & { Subject: Subject[] } & { classes: Class[] };
+type TeacherList = Teacher & { subjects: Subject[] } & { classes: Class[] };
 
 const TeacherListPage = async ({
   searchParams,
@@ -30,7 +30,7 @@ const TeacherListPage = async ({
     },
     {
       header: "Subjects",
-      accessor: "Subject",
+      accessor: "subjects",
       className: "hidden md:table-cell",
     },
     {
@@ -65,7 +65,7 @@ const TeacherListPage = async ({
     >
       <td className="flex items-center gap-4 p-4">
         <Image
-          src={(item as any).photo || "/noAvatar.png"}
+          src={item.img || "/noAvatar.png"}
           alt=""
           width={40}
           height={40}
@@ -78,7 +78,7 @@ const TeacherListPage = async ({
       </td>
       <td className="hidden md:table-cell">{item.username}</td>
       <td className="hidden md:table-cell">
-        {((item as any).Subject || []).map((subject: Subject) => subject.name).join(",")}
+        {item.subjects.map((subject) => subject.name).join(",")}
       </td>
       <td className="hidden md:table-cell">
         {item.classes.map((classItem) => classItem.name).join(",")}
@@ -135,7 +135,7 @@ const TeacherListPage = async ({
     prisma.teacher.findMany({
       where: query,
       include: {
-        Subject: true,
+        subjects: true,
         classes: true,
       },
       take: ITEM_PER_PAGE,

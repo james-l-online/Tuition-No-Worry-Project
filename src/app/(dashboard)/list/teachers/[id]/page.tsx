@@ -20,14 +20,14 @@ const SingleTeacherPage = async ({
 
   const teacher:
     | (Teacher & {
-        _count: { Subject: number; lessons: number; classes: number };
+        _count: { subjects: number; lessons: number; classes: number };
       })
     | null = await prisma.teacher.findUnique({
     where: { id },
     include: {
       _count: {
         select: {
-          Subject: true,
+          subjects: true,
           lessons: true,
           classes: true,
         },
@@ -46,16 +46,16 @@ const SingleTeacherPage = async ({
         <div className="flex flex-col lg:flex-row gap-4">
           {/* USER INFO CARD */}
           <div className="bg-lamaSky py-6 px-4 rounded-md flex-1 flex gap-4">
-              <div className="w-1/3">
+            <div className="w-1/3">
               <Image
-                src={teacher.photo || "/noAvatar.png"}
+                src={teacher.img || "/noAvatar.png"}
                 alt=""
                 width={144}
                 height={144}
                 className="w-36 h-36 rounded-full object-cover"
               />
             </div>
-              <div className="w-2/3 flex flex-col justify-between gap-4">
+            <div className="w-2/3 flex flex-col justify-between gap-4">
               <div className="flex items-center gap-4">
                 <h1 className="text-xl font-semibold">
                   {teacher.name + " " + teacher.surname}
@@ -75,7 +75,7 @@ const SingleTeacherPage = async ({
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/date.png" alt="" width={14} height={14} />
                   <span>
-                    {teacher.birthday ? new Intl.DateTimeFormat("en-GB").format(teacher.birthday) : "-"}
+                    {new Intl.DateTimeFormat("en-GB").format(teacher.birthday)}
                   </span>
                 </div>
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
@@ -115,8 +115,8 @@ const SingleTeacherPage = async ({
                 className="w-6 h-6"
               />
               <div className="">
-                  <h1 className="text-xl font-semibold">
-                  {teacher._count.Subject}
+                <h1 className="text-xl font-semibold">
+                  {teacher._count.subjects}
                 </h1>
                 <span className="text-sm text-gray-400">Branches</span>
               </div>

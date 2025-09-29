@@ -21,8 +21,8 @@ export const createSubject = async (
     await prisma.subject.create({
       data: {
         name: data.name,
-        Teacher: {
-          connect: data.teachers?.map((teacherId) => ({ id: teacherId })) || [],
+        teachers: {
+          connect: data.teachers.map((teacherId) => ({ id: teacherId })),
         },
       },
     });
@@ -46,8 +46,8 @@ export const updateSubject = async (
       },
       data: {
         name: data.name,
-        Teacher: {
-          set: data.teachers?.map((teacherId) => ({ id: teacherId })) || [],
+        teachers: {
+          set: data.teachers.map((teacherId) => ({ id: teacherId })),
         },
       },
     });
@@ -157,16 +157,16 @@ export const createTeacher = async (
         name: data.name,
         surname: data.surname,
         email: data.email || null,
-  phone: data.phone || "",
+        phone: data.phone || null,
         address: data.address,
-  photo: data.img || null,
+        img: data.img || null,
         bloodType: data.bloodType,
         sex: data.sex,
         birthday: data.birthday,
-        Subject: {
+        subjects: {
           connect: data.subjects?.map((subjectId: string) => ({
             id: parseInt(subjectId),
-          })) || [],
+          })),
         },
       },
     });
@@ -204,16 +204,16 @@ export const updateTeacher = async (
         name: data.name,
         surname: data.surname,
         email: data.email || null,
-  phone: data.phone || "",
+        phone: data.phone || null,
         address: data.address,
-  photo: data.img || null,
+        img: data.img || null,
         bloodType: data.bloodType,
         sex: data.sex,
         birthday: data.birthday,
-        Subject: {
+        subjects: {
           set: data.subjects?.map((subjectId: string) => ({
             id: parseInt(subjectId),
-          })) || [],
+          })),
         },
       },
     });
@@ -277,9 +277,9 @@ export const createStudent = async (
         name: data.name,
         surname: data.surname,
         email: data.email || null,
-  phone: data.phone || "",
+        phone: data.phone || null,
         address: data.address,
-  photo: data.img || null,
+        img: data.img || null,
         bloodType: data.bloodType,
         sex: data.sex,
         birthday: data.birthday,
@@ -322,9 +322,9 @@ export const updateStudent = async (
         name: data.name,
         surname: data.surname,
         email: data.email || null,
-  phone: data.phone || "",
+        phone: data.phone || null,
         address: data.address,
-  photo: data.img || null,
+        img: data.img || null,
         bloodType: data.bloodType,
         sex: data.sex,
         birthday: data.birthday,

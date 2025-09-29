@@ -1,210 +1,240 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Day, UserSex } from "@prisma/client";
+import { faker } from "@faker-js/faker";
+
 const prisma = new PrismaClient();
 
+// helpers
+const phoneWithLeading = (leading: string) => `${leading}${faker.string.numeric(8)}`; // 9 digits total
+const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+const unique = (gen: () => string, count: number) => {
+  const s = new Set<string>();
+  while (s.size < count) s.add(gen());
+  return Array.from(s);
+};
+const DAYS: Day[] = [Day.MONDAY, Day.TUESDAY, Day.WEDNESDAY, Day.THURSDAY, Day.FRIDAY];
+
 async function main() {
-  // ADMIN
-  await prisma.admin.create({
-    data: {
-      id: "admin1",
-      username: "admin1",
-    },
-  });
-  await prisma.admin.create({
-    data: {
-      id: "admin2",
-      username: "admin2",
-    },
-  });
+  // ---------- SUBJECTS (20 unique names) ----------
+  const subjectNames = unique(() => faker.word.noun({ length: { min: 5, max: 12 } })
+    .replace(/[^a-z]/gi, "")
+    .slice(0, 1).toUpperCase() + faker.word.noun().slice(1), 20);
+  const subjects = [];
+  for (const name of subjectNames) {
+    const subject = await prisma.subject.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+    subjects.push(subject);
+  }
 
-  // GRADE
-  for (let i = 1; i <= 6; i++) {
-    await prisma.grade.create({
-      data: {
-        level: i,
-      },
+  // ---------- GRADES (5 levels) ----------
+  const gradeLevels = [1, 2, 3, 4, 5];
+  const grades = [];
+  for (const level of gradeLevels) {
+    const grade = await prisma.grade.upsert({
+      where: { level },
+      update: {},
+      create: { level },
+    });
+    grades.push(grade);
+  }
+
+  // ---------- ADMINS (20) ----------
+  for (let i = 0; i < 20; i++) {
+    const username = `admin_${faker.string.alphanumeric({ length: 10 })}`.toLowerCase();
+    await prisma.admin.upsert({
+      where: { username },
+      update: {},
+      create: { username },
     });
   }
 
-  // CLASS
-  for (let i = 1; i <= 6; i++) {
-    await prisma.class.create({
-      data: {
-        name: `${i}A`, 
-        gradeId: i, 
-        capacity: Math.floor(Math.random() * (20 - 15 + 1)) + 15,
+  // ---------- PARENTS (20) ----------
+  const parentPhones = unique(() => phoneWithLeading("9"), 20); // unique phones
+  const parents = [];
+  for (let i = 0; i < 20; i++) {
+    const first = faker.person.firstName();
+    const last = faker.person.lastName();
+    const username = `${first}.${last}.${faker.string.alphanumeric({ length: 4 })}`.toLowerCase();
+    const email = faker.internet.email({ firstName: first, lastName: last }).toLowerCase();
+    const parent = await prisma.parent.upsert({
+      where: { username },
+      update: {},
+      create: {
+        username,
+        name: first,
+        surname: last,
+        email,
+        phone: parentPhones[i],
+        address: faker.location.streetAddress(),
       },
     });
+    parents.push(parent);
   }
 
-  // SUBJECT
-  const subjectData = [
-    { name: "Mathematics" },
-    { name: "Science" },
-    { name: "English" },
-    { name: "History" },
-    { name: "Geography" },
-    { name: "Physics" },
-    { name: "Chemistry" },
-    { name: "Biology" },
-    { name: "Computer Science" },
-    { name: "Art" },
-  ];
-
-  for (const subject of subjectData) {
-    await prisma.subject.create({ data: subject });
-  }
-
-  // TEACHER
-  for (let i = 1; i <= 15; i++) {
-    await prisma.teacher.create({
-      data: {
-        id: `teacher${i}`, // Unique ID for the teacher
-        username: `teacher${i}`,
-        name: `TName${i}`,
-        surname: `TSurname${i}`,
-        email: `teacher${i}@example.com`,
-        phone: `123-456-789${i}`,
-        address: `Address${i}`,
-        bloodType: "A+",
-  sex: i % 2 === 0 ? "MALE" : "FEMALE",
-  Subject: { connect: [{ id: (i % 10) + 1 }] }, 
-        classes: { connect: [{ id: (i % 6) + 1 }] }, 
-        birthday: new Date(new Date().setFullYear(new Date().getFullYear() - 30)),
+  // ---------- TEACHERS (20) ----------
+  const teachers = [];
+  for (let i = 0; i < 20; i++) {
+    const first = faker.person.firstName();
+    const last = faker.person.lastName();
+    const username = `${first}.${last}.${faker.string.alphanumeric({ length: 5 })}`.toLowerCase();
+    const email = faker.datatype.boolean() ? faker.internet.email({ firstName: first, lastName: last }).toLowerCase() : null;
+    const phone = faker.datatype.boolean() ? phoneWithLeading("7") : null;
+    const teacher = await prisma.teacher.upsert({
+      where: { username },
+      update: {},
+      create: {
+        username,
+        name: first,
+        surname: last,
+        email,
+        phone,
+        address: faker.location.streetAddress(),
+        img: faker.datatype.boolean() ? faker.image.avatar() : null,
+        bloodType: pick(["A", "B", "AB", "O"]),
+        sex: faker.datatype.boolean() ? UserSex.MALE : UserSex.FEMALE,
+        birthday: faker.date.past({ years: 35, refDate: new Date("2000-01-01") }),
       },
     });
+    teachers.push(teacher);
   }
 
-  // LESSON
-  for (let i = 1; i <= 30; i++) {
-    await prisma.lesson.create({
-      data: {
-        name: `Lesson${i}`, 
-        day: (["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"][
-          Math.floor(Math.random() * 7)
-        ] as any), 
-        startTime: new Date(new Date().setHours(new Date().getHours() + 1)), 
-        endTime: new Date(new Date().setHours(new Date().getHours() + 3)), 
-        subjectId: (i % 10) + 1, 
-        classId: (i % 6) + 1, 
-        teacherId: `teacher${(i % 15) + 1}`, 
+  // ---------- CLASSES (20) ----------
+  const classes = [];
+  for (let i = 0; i < 20; i++) {
+    const grade = pick(grades);
+    const name = `Class ${grade.level}-${faker.string.alphanumeric({ length: 3 }).toUpperCase()}`;
+    const supervisor = faker.datatype.boolean() ? pick(teachers) : null;
+    const cls = await prisma.class.upsert({
+      where: { name },
+      update: {},
+      create: {
+        name,
+        capacity: faker.number.int({ min: 20, max: 40 }),
+        gradeId: grade.id,
+        supervisorId: supervisor ? supervisor.id : null,
       },
     });
+    classes.push(cls);
   }
 
-  // PARENT
-  for (let i = 1; i <= 25; i++) {
-    await prisma.parent.create({
-      data: {
-        id: `parentId${i}`,
-        name: `PName ${i}`,
-        email: `parent${i}@example.com`,
-        phone: `123-456-789${i}`,
+  // ---------- STUDENTS (20) ----------
+  const students = [];
+  for (let i = 0; i < 20; i++) {
+    const first = faker.person.firstName();
+    const last = faker.person.lastName();
+    const username = `${first}.${last}.${faker.string.alphanumeric({ length: 6 })}`.toLowerCase();
+    const email = faker.datatype.boolean() ? faker.internet.email({ firstName: first, lastName: last }).toLowerCase() : null;
+    const phone = faker.datatype.boolean() ? phoneWithLeading("8") : null;
+    const cls = pick(classes);
+    const grade = grades.find(g => g.id === cls.gradeId)!;
+    const parent = pick(parents);
+    const student = await prisma.student.upsert({
+      where: { username },
+      update: {},
+      create: {
+        username,
+        name: first,
+        surname: last,
+        email,
+        phone,
+        address: faker.location.streetAddress(),
+        img: faker.datatype.boolean() ? faker.image.avatar() : null,
+        bloodType: pick(["A", "B", "AB", "O"]),
+        sex: faker.datatype.boolean() ? UserSex.MALE : UserSex.FEMALE,
+        birthday: faker.date.birthdate({ min: 6, max: 18, mode: "age" }),
+        classId: cls.id,
+        gradeId: grade.id,
+        parentId: parent.id,
       },
     });
+    students.push(student);
   }
 
-  // STUDENT
-  for (let i = 1; i <= 50; i++) {
-    await prisma.student.create({
+  // ---------- LESSONS (20) ----------
+  const lessons = [];
+  for (let i = 0; i < 20; i++) {
+    const subject = pick(subjects);
+    const cls = pick(classes);
+    const teacher = pick(teachers);
+    const day = pick(DAYS);
+
+    // random time next week aligned to a day (9:00–16:00)
+    const startHour = faker.number.int({ min: 9, max: 15 });
+    const dateBase = faker.date.soon({ days: 7 });
+    // align to weekday-ish (not exact but fine for seed)
+    const startTime = new Date(dateBase);
+    startTime.setHours(startHour, 0, 0, 0);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+
+    const lesson = await prisma.lesson.create({
       data: {
-        id: `student${i}`, 
-        username: `student${i}`, 
-        name: `SName${i}`,
-        surname: `SSurname ${i}`,
-        email: `student${i}@example.com`,
-        phone: `987-654-321${i}`,
-        address: `Address${i}`,
-        bloodType: "O-",
-  sex: i % 2 === 0 ? "MALE" : "FEMALE",
-        parentId: `parentId${Math.ceil(i / 2) % 25 || 25}`, 
-        gradeId: (i % 6) + 1, 
-        classId: (i % 6) + 1, 
-        birthday: new Date(new Date().setFullYear(new Date().getFullYear() - 10)),
+        name: `${subject.name} - ${cls.name}`,
+        day,
+        startTime,
+        endTime,
+        subjectId: subject.id,
+        classId: cls.id,
+        teacherId: teacher.id,
       },
     });
+    lessons.push(lesson);
   }
 
-  // EXAM
-  for (let i = 1; i <= 10; i++) {
-    await prisma.exam.create({
-      data: {
-        title: `Exam ${i}`, 
-        startTime: new Date(new Date().setHours(new Date().getHours() + 1)), 
-        endTime: new Date(new Date().setHours(new Date().getHours() + 2)), 
-        lessonId: (i % 30) + 1, 
-      },
-    });
-  }
-
-  // ASSIGNMENT
-  for (let i = 1; i <= 10; i++) {
-    await prisma.assignment.create({
-      data: {
-        title: `Assignment ${i}`, 
-        startDate: new Date(new Date().setHours(new Date().getHours() + 1)), 
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)), 
-        lessonId: (i % 30) + 1, 
-      },
-    });
-  }
-
-  // RESULT
-  for (let i = 1; i <= 10; i++) {
-    await prisma.result.create({
-      data: {
-        score: 90, 
-        studentId: `student${i}`, 
-        ...(i <= 5 ? { examId: i } : { assignmentId: i - 5 }), 
-      },
-    });
-  }
-
-  // ATTENDANCE
-  for (let i = 1; i <= 10; i++) {
-    await prisma.attendance.create({
-      data: {
-        date: new Date(), 
-        present: true, 
-        studentId: `student${i}`, 
-        lessonId: (i % 30) + 1, 
-      },
-    });
-  }
-
-  // EVENT
-  for (let i = 1; i <= 5; i++) {
-    await prisma.event.create({
-      data: {
-        title: `Event ${i}`, 
-        description: `Description for Event ${i}`, 
-        startTime: new Date(new Date().setHours(new Date().getHours() + 1)), 
-        endTime: new Date(new Date().setHours(new Date().getHours() + 2)), 
-        classId: (i % 5) + 1, 
-      },
-    });
-  }
-
-  // ANNOUNCEMENT
-  for (let i = 1; i <= 5; i++) {
+  // ---------- ANNOUNCEMENTS (20) ----------
+  for (let i = 0; i < 20; i++) {
+    const maybeClass = faker.datatype.boolean() ? pick(classes) : null;
     await prisma.announcement.create({
       data: {
-        title: `Announcement ${i}`, 
-        description: `Description for Announcement ${i}`, 
-        date: new Date(), 
-        classId: (i % 5) + 1, 
+        title: faker.company.buzzPhrase(),
+        description: faker.lorem.sentences({ min: 1, max: 3 }),
+        date: faker.date.recent({ days: 30 }),
+        classId: maybeClass ? maybeClass.id : null,
       },
     });
   }
 
-  console.log("Seeding completed successfully.");
+  // ---------- EVENTS (20) ----------
+  for (let i = 0; i < 20; i++) {
+    const maybeClass = faker.datatype.boolean() ? pick(classes) : null;
+    const start = faker.date.soon({ days: 30 });
+    const end = new Date(start.getTime() + faker.number.int({ min: 30, max: 120 }) * 60 * 1000);
+    await prisma.event.create({
+      data: {
+        title: faker.lorem.words({ min: 2, max: 4 }),
+        description: faker.lorem.sentence(),
+        startTime: start,
+        endTime: end,
+        classId: maybeClass ? maybeClass.id : null,
+      },
+    });
+  }
+
+  // OPTIONAL: Make some lesson attendance & simple results
+  // (small numbers to keep it quick)
+  for (const lesson of lessons.slice(0, 10)) {
+    const roster = faker.helpers.arrayElements(students, 8);
+    for (const s of roster) {
+      await prisma.attendance.create({
+        data: {
+          date: lesson.startTime,
+          present: faker.datatype.boolean(0.85),
+          lessonId: lesson.id,
+          studentId: s.id,
+        },
+      });
+    }
+  }
+
+  console.log("✅ Seed complete.");
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

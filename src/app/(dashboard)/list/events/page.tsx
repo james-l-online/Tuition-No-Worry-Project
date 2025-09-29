@@ -72,13 +72,11 @@ const EventListPage = async ({
         })}
       </td>
       <td className="hidden md:table-cell">
-        {item.endTime
-          ? item.endTime.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-          : "-"}
+        {item.endTime.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })}
       </td>
       <td>
         <div className="flex items-center gap-2">
