@@ -1,4 +1,4 @@
-# Tuition-No-Worry Dashboard
+# Lama Dev School Management Dashboard
 
 ## Getting Started
 
@@ -24,5 +24,3 @@ To learn more about Next.js, take a look at the following resources:
 
 - [Lama Dev Youtube Channel](https://youtube.com/lamadev) 
 - [Next.js](https://nextjs.org/learn)
-
-credit: https://github.com/safak/next-dashboard-ui/tree/starter

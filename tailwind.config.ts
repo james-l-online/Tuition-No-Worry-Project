@@ -1,4 +1,3 @@
-import { loadManifestWithRetries } from "next/dist/server/load-components";
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -20,8 +19,8 @@ const config: Config = {
         lamaPurple: "#CFCEFF",
         lamaPurpleLight: "#F1F0FF",
         lamaYellow: "#FAE27C",
-        lamaYellowLight: "#FEFCEB",
-      }
+        lamaYellowLight: "#FEFCE8",
+      },
     },
   },
   plugins: [],

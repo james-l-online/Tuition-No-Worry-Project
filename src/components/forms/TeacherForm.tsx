@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import InputField from "../InputField";
 import Image from "next/image";
@@ -20,15 +20,9 @@ const schema = z.object({
   phone: z.string().min(1, { message: "Phone is required!" }),
   address: z.string().min(1, { message: "Address is required!" }),
   bloodType: z.string().min(1, { message: "Blood Type is required!" }),
-  // Coerce string from <input type="date" /> to Date
-  birthday: z.coerce.date({ message: "Birthday is required!" }),
+  birthday: z.date({ message: "Birthday is required!" }),
   sex: z.enum(["male", "female"], { message: "Sex is required!" }),
-  // File validation in browser; optional here then you can enforce in submit
-  img: z
-    .any()
-    .refine((v) => typeof window === "undefined" || v instanceof File, {
-      message: "Image is required",
-    }),
+  img: z.instanceof(File, { message: "Image is required" }),
 });
 
 type Inputs = z.infer<typeof schema>;
@@ -45,7 +39,7 @@ const TeacherForm = ({
     handleSubmit,
     formState: { errors },
   } = useForm<Inputs>({
-    resolver: zodResolver(schema) as Resolver<Inputs>,
+    resolver: zodResolver(schema),
   });
 
   const onSubmit = handleSubmit((data) => {
