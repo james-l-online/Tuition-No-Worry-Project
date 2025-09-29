@@ -1,4 +1,4 @@
-import { Day, PrismaClient, UserSex } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
@@ -66,8 +66,8 @@ async function main() {
         phone: `123-456-789${i}`,
         address: `Address${i}`,
         bloodType: "A+",
-        sex: i % 2 === 0 ? UserSex.MALE : UserSex.FEMALE,
-        subjects: { connect: [{ id: (i % 10) + 1 }] }, 
+  sex: i % 2 === 0 ? "MALE" : "FEMALE",
+  Subject: { connect: [{ id: (i % 10) + 1 }] }, 
         classes: { connect: [{ id: (i % 6) + 1 }] }, 
         birthday: new Date(new Date().setFullYear(new Date().getFullYear() - 30)),
       },
@@ -79,11 +79,9 @@ async function main() {
     await prisma.lesson.create({
       data: {
         name: `Lesson${i}`, 
-        day: Day[
-          Object.keys(Day)[
-            Math.floor(Math.random() * Object.keys(Day).length)
-          ] as keyof typeof Day
-        ], 
+        day: (["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"][
+          Math.floor(Math.random() * 7)
+        ] as any), 
         startTime: new Date(new Date().setHours(new Date().getHours() + 1)), 
         endTime: new Date(new Date().setHours(new Date().getHours() + 3)), 
         subjectId: (i % 10) + 1, 
@@ -98,12 +96,9 @@ async function main() {
     await prisma.parent.create({
       data: {
         id: `parentId${i}`,
-        username: `parentId${i}`,
         name: `PName ${i}`,
-        surname: `PSurname ${i}`,
         email: `parent${i}@example.com`,
         phone: `123-456-789${i}`,
-        address: `Address${i}`,
       },
     });
   }
@@ -120,7 +115,7 @@ async function main() {
         phone: `987-654-321${i}`,
         address: `Address${i}`,
         bloodType: "O-",
-        sex: i % 2 === 0 ? UserSex.MALE : UserSex.FEMALE,
+  sex: i % 2 === 0 ? "MALE" : "FEMALE",
         parentId: `parentId${Math.ceil(i / 2) % 25 || 25}`, 
         gradeId: (i % 6) + 1, 
         classId: (i % 6) + 1, 
