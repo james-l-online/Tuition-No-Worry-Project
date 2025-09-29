@@ -8,8 +8,27 @@ const CountChartContainer = async () => {
     _count: true,
   });
 
-  const boys = data.find((d) => d.sex === "MALE")?._count || 0;
-  const girls = data.find((d) => d.sex === "FEMALE")?._count || 0;
+  // Prisma's groupBy _count can have different shapes depending on client version
+  // Normalize to numeric counts safely.
+  const maleGroup = data.find((d) => d.sex === "MALE");
+  const femaleGroup = data.find((d) => d.sex === "FEMALE");
+
+  const extractCount = (grp: any) => {
+    if (!grp || !grp._count) return 0;
+    // Common shapes: { _count: { _all: number } } or { _count: number }
+    if (typeof grp._count === "number") return grp._count;
+    if (typeof grp._count._all === "number") return grp._count._all;
+    // fallback: try to find a numeric property inside _count
+    const keys = Object.keys(grp._count);
+    for (const k of keys) {
+      const v = (grp._count as any)[k];
+      if (typeof v === "number") return v;
+    }
+    return 0;
+  };
+
+  const boys = extractCount(maleGroup);
+  const girls = extractCount(femaleGroup);
 
   return (
     <div className="bg-white rounded-xl w-full h-full p-4">
@@ -26,14 +45,14 @@ const CountChartContainer = async () => {
           <div className="w-5 h-5 bg-lamaSky rounded-full" />
           <h1 className="font-bold">{boys}</h1>
           <h2 className="text-xs text-gray-300">
-            Boys ({Math.round((boys / (boys + girls)) * 100)}%)
+            Boys ({(boys + girls) > 0 ? Math.round((boys / (boys + girls)) * 100) : 0}%)
           </h2>
         </div>
         <div className="flex flex-col gap-1">
           <div className="w-5 h-5 bg-lamaYellow rounded-full" />
           <h1 className="font-bold">{girls}</h1>
           <h2 className="text-xs text-gray-300">
-            Girls ({Math.round((girls / (boys + girls)) * 100)}%)
+            Girls ({(boys + girls) > 0 ? Math.round((girls / (boys + girls)) * 100) : 0}%)
           </h2>
         </div>
       </div>

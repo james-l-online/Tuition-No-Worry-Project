@@ -37,8 +37,8 @@ const columns = [
     className: "hidden lg:table-cell",
   },
   {
-    header: "Address",
-    accessor: "address",
+    header: "Email",
+    accessor: "email",
     className: "hidden lg:table-cell",
   },
   ...(role === "admin"
@@ -65,8 +65,8 @@ const renderRow = (item: ParentList) => (
     <td className="hidden md:table-cell">
       {item.students.map((student) => student.name).join(",")}
     </td>
-    <td className="hidden md:table-cell">{item.phone}</td>
-    <td className="hidden md:table-cell">{item.address}</td>
+  <td className="hidden md:table-cell">{item.phone}</td>
+  <td className="hidden md:table-cell">{item.email || "-"}</td>
     <td>
       <div className="flex items-center gap-2">
         {role === "admin" && (

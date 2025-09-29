@@ -8,7 +8,7 @@ import { Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
-type SubjectList = Subject & { teachers: Teacher[] };
+type SubjectList = Subject & { Teacher: Teacher[] };
 
 const SubjectListPage = async ({
   searchParams,
@@ -25,7 +25,7 @@ const SubjectListPage = async ({
     },
     {
       header: "Teachers",
-      accessor: "teachers",
+      accessor: "Teacher",
       className: "hidden md:table-cell",
     },
     {
@@ -41,7 +41,7 @@ const SubjectListPage = async ({
     >
       <td className="flex items-center gap-4 p-4">{item.name}</td>
       <td className="hidden md:table-cell">
-        {item.teachers.map((teacher) => teacher.name).join(",")}
+        {(item.Teacher || []).map((teacher) => teacher.name).join(",")}
       </td>
       <td>
         <div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ const SubjectListPage = async ({
     prisma.subject.findMany({
       where: query,
       include: {
-        teachers: true,
+        Teacher: true,
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
