@@ -1,4 +1,4 @@
-# Readme
+# Readme to run as Container
 
 ## Prerequisites
 
@@ -12,28 +12,6 @@
 
 - Create your first Clerk application.
 - only username field is required for this demo, you may self configure others.
-
----
-
-## **Get Clerk API Keys**
-
-- In Clerk dashboard, copy your Publishable Key and Secret Key.
-- Create a **`.env`** at the repo root:
-
-```bash
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your-publishable-key
-CLERK_SECRET_KEY=your-secret-key
-```
-
----
-
-## **Set Clerk Sign-In URL**
-
-Add to `.env`:
-
-```bash
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
-```
 
 ---
 
@@ -74,6 +52,8 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 ## 2) Configure environment variables
 
 Create a **`.env`** at the repo root: (must manually edit and create this)
+Get Clerk API Keys**
+- In Clerk dashboard —> configure —> API keys —> Publishable Key / Secret Key.
 
 ```sh
 # ---- App ----
@@ -83,6 +63,7 @@ PORT=3000
 # ---- Clerk ----
 CLERK_SECRET_KEY= [add your clerk secret key here ]
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [ add your clerk publisher key here ]
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 
 # ---- Prisma / Postgres ----
 # IMPORTANT: 'postgres'  is a Docker service name here (internal DNS), not localhost.
