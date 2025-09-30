@@ -1,20 +1,34 @@
+# ---------- deps ----------
+FROM node:22-alpine AS deps
+WORKDIR /app
+# Prisma needs OpenSSL at runtime on Alpine
+RUN apk add --no-cache openssl
+COPY package*.json ./
+RUN npm ci
+
+# ---------- builder ----------
+FROM node:22-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache openssl
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+# Generate Prisma client for the build
+RUN npx prisma generate
+# Build Next.js app
+RUN npm run build
+
 # ---------- runtime ----------
 FROM node:22-alpine AS runner
-
-# Create dedicated non-root user (UID 1007) with a home dir
+# non-root user for security
 RUN addgroup -S app && adduser -S -G app -u 1007 -h /home/app app
-
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOME=/home/app
-
+ENV NODE_ENV=production PORT=3000 HOME=/home/app
 WORKDIR /app
 EXPOSE 3000
 
-# Copy runtime artifacts
+# Copy only essential files for runtime
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/.next ./.next
-COPY --from=builder --chown=app:app /app/public ./public
+COPY --from=builder --chown=app:app /app/public ./public   # images & static
 COPY --from=builder --chown=app:app /app/package*.json ./
 COPY --from=builder --chown=app:app /app/prisma ./prisma
 
