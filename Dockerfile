@@ -14,7 +14,7 @@ EXPOSE 3000
 # Copy runtime artifacts
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/.next ./.next
-COPY --from=builder --chown=app:app /app/public ./public          # <-- ADD THIS
+COPY --from=builder --chown=app:app /app/public ./public
 COPY --from=builder --chown=app:app /app/package*.json ./
 COPY --from=builder --chown=app:app /app/prisma ./prisma
 
