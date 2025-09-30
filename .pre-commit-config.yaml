@@ -1,3 +1,21 @@
+# a local Git hook config that prevents common issues before commits and helps stop secrets from being committed. Key purposes:
+
+# Run secret scanners (gitleaks / git-secrets) on staged files to block API keys, passwords, private keys, tokens.
+# Enforce simple hygiene (trim trailing whitespace, ensure final newline, fix file permissions, validate YAML/JSON) so commits are clean.
+# Complement the CI secret-scan workflow (CI will scan entire repo on pushes/PRs).
+# install pre-commit (Python required)
+# python -m pip install --user pre-commit
+
+# # from repo root
+# pre-commit install
+
+# # run all hooks once across the repo
+# pre-commit run --all-files
+
+# If a hook blocks a commit, inspect the failing output, fix the issue, then stage files and commit again. To temporarily skip hooks (not recommended):
+# git commit -m "msg" --no-verify
+
+
 repos:
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.26.3
