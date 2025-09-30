@@ -29,3 +29,12 @@ fi
 
 echo "Starting app…"
 exec "$@"
+
+# Notes:
+# - If you mount host volumes into /app (for development), file ownership may be root on the container.
+#   Set CHOWN_ON_STARTUP=true to attempt a chown -R /app to the runtime user (UID 1000).
+#   Example in docker-compose:
+#     environment:
+#       - CHOWN_ON_STARTUP=true
+# - chown requires the container to run as a user that can perform chown (root). If you are running
+#   the container as non-root, leave CHOWN_ON_STARTUP unset and make sure host side ownership maps to UID 1000.

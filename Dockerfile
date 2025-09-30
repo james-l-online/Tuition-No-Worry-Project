@@ -34,7 +34,15 @@ COPY --from=builder /app/prisma ./prisma
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN sed -i "s/\r$//" /entrypoint.sh && chmod +x /entrypoint.sh
 
+# create a non-root user and make sure ownership/permissions allow it to run the app
+RUN addgroup -S app && adduser -S -G app -u 1000 app \
+	&& mkdir -p /home/app \
+	&& chown -R app:app /app /entrypoint.sh /home/app
 
+ENV HOME=/home/app
+
+# switch to the unprivileged user for runtime
+USER app
 
 # (optional) force run via sh to bypass shebang issues
 ENTRYPOINT ["sh", "/entrypoint.sh"]

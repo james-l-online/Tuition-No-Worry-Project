@@ -17,6 +17,8 @@ services:
 
   app:
     build: .
+    # run the container process as the non-root user created in the Dockerfile (UID 1000)
+    user: "1000:1000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -26,8 +28,12 @@ services:
       # required
       NODE_ENV: production
       DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/mydb
+      # If you need the container to chown mounted files on startup, set this to "true".
+      # NOTE: chown requires the container to be started as root; by default the service
+      # runs as UID 1000 (non-root). Use this only in a development flow where you start
+      # the service as root for an init step or run a one-shot chown container.
+      CHOWN_ON_STARTUP: "false"
 
-   
       PRISMA_SEED_ON_START: "true"     # set "true" when you want to reseed
       PRISMA_STUDIO: "true"            # set "true" to auto-run Studio
       PRISMA_STUDIO_PORT: "5555"
