@@ -20,10 +20,14 @@ RUN npm run build
 # ---------- runtime ----------
 FROM node:22-alpine AS runner
 # non-root user for security
-RUN addgroup -S app && adduser -S -G app -u 1007 -h /home/app app
+# Install OpenSSL in the runtime image (Prisma needs it at runtime on Alpine)
+RUN apk add --no-cache openssl
+# Create a non-root user with UID 1000 to match common host mappings
+RUN addgroup -S app && adduser -S -G app -u 1000 -h /home/app app
 ENV NODE_ENV=production PORT=3000 HOME=/home/app
 WORKDIR /app
 EXPOSE 3000
+EXPOSE 5555
 
 # Copy only essential files for runtime
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules

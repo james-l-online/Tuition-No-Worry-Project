@@ -8,10 +8,15 @@
 
 # 1) Register and setup app in Clerk
 
-**Register for [Clerk Account](https://clerk.com/)** 
+**Register for [Clerk Account](https://clerk.com/)**
 
-- Create your first Clerk application.
-- only username field is required for this demo, you may self configure others.
+- **Docker Compose example**
+
+Replace values with your own in a local `.env` (do not commit secrets). Example placeholder:
+
+```
+DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
+```
 
 ---
 
@@ -20,7 +25,7 @@
 - Go to "Users" in Clerk dashboard.
 - Create users for each role: `parent`, `teacher`, `student`, `admin`
 - In each user, go into Profile.
-Scroll down to Metadata, then edit Public
+   Scroll down to Metadata, then edit Public
 - Set `public_metadata` for each user:
 
 ```yaml
@@ -57,7 +62,7 @@ Scroll down to Metadata, then edit Public
 
 Create a **`.env`** at the repo root: (must manually edit and create this)
 
-```
+```sh
 # ---- App ----
 NODE_ENV=development           # use 'development' or 'production'
 PORT=3000
@@ -78,7 +83,6 @@ PRISMA_STUDIO=true            # auto-start Prisma Studio inside the container
 PRISMA_STUDIO_PORT=5555       # default 5555 , for viewing schema like excel sheet
 ```
 
-
 ---
 
 ## Docker dev note: file ownership (important)
@@ -88,14 +92,12 @@ you should make the host project files owned by UID 1000 so the container user c
 See `docker/README.md` for full platform-specific commands. Quick copy/paste examples:
 
 - Linux / macOS / WSL:
-  sudo chown -R 1000:1000 .
-  docker compose up --build
-
+   sudo chown -R 1000:1000 .
+   docker compose up --build
 - Windows (no WSL): prefer building and running the image without bind mounts, or use WSL to chown files.
 
 If you prefer an init chown step instead of changing host ownership, see `docker/README.md` for an optional
 init-chown pattern (dev only).
-
 
 ## 3) Build & run
 
@@ -106,14 +108,13 @@ docker compose up -d
 ```
 
 - To run app, open in browser:
-    
-    ```powershell
-    http://localhost:3000/
-    ```
-    
 
- login with your created clerk accounts earlier
+```powershell
+http://localhost:3000/
+```
+
+login with your created clerk accounts earlier
 
 ---
 
-##
+## 
