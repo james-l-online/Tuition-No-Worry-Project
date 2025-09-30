@@ -17,8 +17,8 @@
 
 ## **Get Clerk API Keys**
 
-- In Clerk dashboard, copy your Publishable Key and Secret Key.
-- Create a **`.env`** at the repo root:
+- In Clerk dashboard, copy your Publishable Key and Secret Key
+- needed for .env file later
 
 ```bash
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your-publishable-key
