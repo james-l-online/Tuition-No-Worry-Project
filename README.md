@@ -75,9 +75,10 @@ POSTGRES_DB=mydb
 # DATABASE_URL=postgresql://myuser:mypassword@postgres:5432/mydb
 DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>
 
-# Clerk (auth) keys - add your own in .env
-CLERK_SECRET_KEY=
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+# Clerk (auth) keys 
+CLERK_SECRET_KEY= [add your secret key here]
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [add your publishable key here]
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 
 # Prisma options
 PRISMA_SEED_ON_START=false
