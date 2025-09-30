@@ -107,7 +107,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=${PORT:-3000}
       - DATABASE_URL=${DATABASE_URL}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
