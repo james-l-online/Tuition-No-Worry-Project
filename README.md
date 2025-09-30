@@ -60,27 +60,32 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 
 - In Clerk dashboard —> configure —> API keys —> Publishable Key / Secret Key.
 
-Create a **`.env`** at the repo root: (must manually edit and create this)
+Create a **`.env`** at the repo root: (rename the provided .env.example to .env to use)
 
 ```sh
-# ---- App ----
-NODE_ENV=development           # use 'development' or 'production'
-PORT=3000
+# Copy this file to .env and fill in values for local development
+# Do NOT commit real credentials. .env is in .gitignore.
 
-# ---- Clerk ----
-CLERK_SECRET_KEY= [add your clerk secret key here ]
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [ add your clerk publisher key here ]
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
+# Postgres credentials used by docker-compose
+POSTGRES_USER=myuser
+POSTGRES_PASSWORD=mypassword
+POSTGRES_DB=mydb
 
-# ---- Prisma / Postgres ----
-# IMPORTANT: 'postgres'  is a Docker service name here (internal DNS), not localhost.
-DATABASE_URL=postgresql://myuser:mypassword@postgres:5432/mydb?schema=public&sslmode=disable
+# Prisma / app database URL
+# DATABASE_URL=postgresql://myuser:mypassword@postgres:5432/mydb
+DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>
 
-# Optional toggles in entrypoint:
-PRISMA_SEED_ON_START=true     # to run `prisma db seed` automatically on boot
-PRISMA_STUDIO=true            # auto-start Prisma Studio inside the container
-PRISMA_STUDIO_PORT=5555       # default 5555 , for viewing schema like excel sheet
+# Clerk (auth) keys - add your own in .env
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+
+# Prisma options
+PRISMA_SEED_ON_START=false
+PRISMA_STUDIO=false
+PRISMA_STUDIO_PORT=5555
+
+# If you need the container to chown mounted files on startup (development only)
+# CHOWN_ON_STARTUP=false
 ```
 
 ---
