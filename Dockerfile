@@ -19,27 +19,25 @@ RUN npm run build
 
 # ---------- runtime ----------
 FROM node:22-alpine AS runner
-# non-root user for security
 # Install OpenSSL in the runtime image (Prisma needs it at runtime on Alpine)
 RUN apk add --no-cache openssl
-# Create a non-root user with UID 1000 to match common host mappings
-RUN addgroup -S app && adduser -S -G app -u 1000 -h /home/app app
-ENV NODE_ENV=production PORT=3000 HOME=/home/app
+ENV NODE_ENV=production PORT=3000 HOME=/home/node
 WORKDIR /app
 EXPOSE 3000
 EXPOSE 5555
 
 # Copy only essential files for runtime
-COPY --from=builder --chown=app:app /app/node_modules ./node_modules
-COPY --from=builder --chown=app:app /app/.next ./.next
-COPY --from=builder --chown=app:app /app/public ./public
-COPY --from=builder --chown=app:app /app/package*.json ./
-COPY --from=builder --chown=app:app /app/prisma ./prisma
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/.next ./.next
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/package*.json ./
+COPY --from=builder --chown=node:node /app/prisma ./prisma
 
 # Entrypoint
-COPY --chown=app:app docker/entrypoint.sh /entrypoint.sh
+COPY --chown=node:node docker/entrypoint.sh /entrypoint.sh
 RUN sed -i "s/\r$//" /entrypoint.sh && chmod +x /entrypoint.sh
 
-USER app
+# non-root user for security
+USER node
 ENTRYPOINT ["sh", "/entrypoint.sh"]
 CMD ["npm", "start"]
