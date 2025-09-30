@@ -1,4 +1,4 @@
-# Readme
+# To Run as Docker Container
 
 ## Prerequisites
 
@@ -8,32 +8,10 @@
 
 # 1) Register and setup app in Clerk
 
-**Register for [Clerk Account](https://clerk.com/)**
+**Register for [Clerk Account](https://clerk.com/)** 
 
 - Create your first Clerk application.
 - only username field is required for this demo, you may self configure others.
-
----
-
-## **Get Clerk API Keys**
-
-- In Clerk dashboard, copy your Publishable Key and Secret Key
-- needed for .env file later
-
-```bash
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your-publishable-key
-CLERK_SECRET_KEY=your-secret-key
-```
-
----
-
-## **Set Clerk Sign-In URL**
-
-Add to `.env`:
-
-```bash
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
-```
 
 ---
 
@@ -42,7 +20,7 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 - Go to "Users" in Clerk dashboard.
 - Create users for each role: `parent`, `teacher`, `student`, `admin`
 - In each user, go into Profile.
-   Scroll down to Metadata, then edit Public
+Scroll down to Metadata, then edit Public
 - Set `public_metadata` for each user:
 
 ```yaml
@@ -73,9 +51,13 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 
 ## 2) Configure environment variables
 
+## **Get Clerk API Keys**
+
+- In Clerk dashboard —> configure —> API keys —> Publishable Key / Secret Key.
+
 Create a **`.env`** at the repo root: (must manually edit and create this)
 
-```sh
+```
 # ---- App ----
 NODE_ENV=development           # use 'development' or 'production'
 PORT=3000
@@ -83,6 +65,7 @@ PORT=3000
 # ---- Clerk ----
 CLERK_SECRET_KEY= [add your clerk secret key here ]
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [ add your clerk publisher key here ]
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 
 # ---- Prisma / Postgres ----
 # IMPORTANT: 'postgres'  is a Docker service name here (internal DNS), not localhost.
@@ -192,7 +175,7 @@ exec "$@"
 
 **`Dockerfile`** (already included in repo)
 
-multi-stage; generates Prisma client, builds Next, normalizes entrypoint EOLs:
+multi-stage; generates Prisma client, builds Next, normalizes entrypoint EOLs):
 
 ```docker
 # ---------- deps ----------
@@ -246,13 +229,14 @@ docker compose up -d
 ```
 
 - To run app, open in browser:
+    
+    ```powershell
+    http://localhost:3000/
+    ```
+    
 
-```powershell
-http://localhost:3000/
-```
-
-login with your created clerk accounts earlier
+ login with your created clerk accounts earlier
 
 ---
 
-## 
+##
