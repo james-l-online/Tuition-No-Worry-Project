@@ -66,6 +66,7 @@ PORT=3000
 CLERK_SECRET_KEY= [add your clerk secret key here ]
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [ add your clerk publisher key here ]
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 
 # ---- Prisma / Postgres ----
 # IMPORTANT: 'postgres'  is a Docker service name here (internal DNS), not localhost.
@@ -126,6 +127,21 @@ volumes:
 ```
 
 ---
+
+## Docker dev note: file ownership (important)
+
+This project runs the app as a non-root container user (UID 1000). If you develop with bind mounts,
+you should make the host project files owned by UID 1000 so the container user can read/write them.
+See `docker/README.md` for full platform-specific commands. Quick copy/paste examples:
+
+- Linux / macOS / WSL:
+  sudo chown -R 1000:1000 .
+  docker compose up --build
+
+- Windows (no WSL): prefer building and running the image without bind mounts, or use WSL to chown files.
+
+If you prefer an init chown step instead of changing host ownership, see `docker/README.md` for an optional
+init-chown pattern (dev only).
 
 ## 4) Entrypoint
 
