@@ -5,6 +5,7 @@ import TableSearch from "@/components/TableSearch";
 import prisma from "@/lib/prisma";
 import { Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
+import Avatar from "@/components/Avatar";
 import Link from "next/link";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
@@ -64,9 +65,9 @@ const TeacherListPage = async ({
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
       <td className="flex items-center gap-4 p-4">
-        <Image
+        <Avatar
           src={item.img || "/noAvatar.png"}
-          alt=""
+          alt={`${item.name} avatar`}
           width={40}
           height={40}
           className="md:hidden xl:block w-10 h-10 rounded-full object-cover"

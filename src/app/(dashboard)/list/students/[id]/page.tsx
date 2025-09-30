@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { Class, Student } from "@prisma/client";
 import Image from "next/image";
+import Avatar from "@/components/Avatar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -43,9 +44,9 @@ const SingleStudentPage = async ({
           {/* USER INFO CARD */}
           <div className="bg-lamaSky py-6 px-4 rounded-md flex-1 flex gap-4">
             <div className="w-1/3">
-              <Image
+              <Avatar
                 src={student.img || "/noAvatar.png"}
-                alt=""
+                alt={`${student.name} avatar`}
                 width={144}
                 height={144}
                 className="w-36 h-36 rounded-full object-cover"

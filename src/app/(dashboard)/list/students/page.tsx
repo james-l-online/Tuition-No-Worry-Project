@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
+import Avatar from "@/components/Avatar";
 import Link from "next/link";
 
 import { auth } from "@clerk/nextjs/server";
@@ -62,9 +63,9 @@ const StudentListPage = async ({
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
       <td className="flex items-center gap-4 p-4">
-        <Image
+        <Avatar
           src={item.img || "/noAvatar.png"}
-          alt=""
+          alt={`${item.name} avatar`}
           width={40}
           height={40}
           className="md:hidden xl:block w-10 h-10 rounded-full object-cover"
