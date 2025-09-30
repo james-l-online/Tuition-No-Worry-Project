@@ -28,7 +28,7 @@ EXPOSE 3000
 # Copy only essential files for runtime
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/.next ./.next
-COPY --from=builder --chown=app:app /app/public ./public   # images & static
+COPY --from=builder --chown=app:app /app/public ./public
 COPY --from=builder --chown=app:app /app/package*.json ./
 COPY --from=builder --chown=app:app /app/prisma ./prisma
 
