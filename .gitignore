@@ -55,3 +55,9 @@ override.tf.json
 # Ignore the tf-acr and tf-aks directories (keep them locally, don't track in git)
 tf-acr/
 tf-aks/
+
+# Additional terraform workspaces/modules to ignore
+tf-aks-storage/
+tf-iam/
+modules/
+modules/storage/

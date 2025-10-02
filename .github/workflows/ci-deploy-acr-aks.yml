@@ -1,0 +1,59 @@
+# Commented GitHub Actions workflow for review only
+# This workflow demonstrates: build -> tag -> push to ACR -> deploy to AKS.
+# DO NOT enable or run this file without reviewing and replacing secrets and variables.
+
+# name: CI: Build & Deploy to AKS (Demo)
+# on:
+#   push:
+#     branches: [ "main", "starter" ]
+#   workflow_dispatch:
+#
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       packages: write
+#       id-token: write # needed for OIDC
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#
+#       - name: Setup QEMU (for multi-arch)
+#         uses: docker/setup-qemu-action@v2
+#
+#       - name: Login to ACR with OIDC (example)
+#         uses: azure/docker-login@v1
+#         with:
+#           login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+#           username: ${{ secrets.ACR_USERNAME }} # or use OIDC in production
+#           password: ${{ secrets.ACR_PASSWORD }}
+#
+#       - name: Build and push image
+#         uses: docker/build-push-action@v4
+#         with:
+#           context: .
+#           push: true
+#           tags: |
+#             ${{ secrets.ACR_LOGIN_SERVER }}/tuition-no-worry:${{ github.sha }}
+#             ${{ secrets.ACR_LOGIN_SERVER }}/tuition-no-worry:latest
+#
+#   deploy:
+#     needs: build
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Configure kubectl
+#         uses: azure/aks-set-context@v2
+#         with:
+#           creds: ${{ secrets.AZURE_CREDENTIALS }}
+#           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+#           resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+#
+#       - name: Deploy to AKS (kubectl apply)
+#         run: |
+#           kubectl set image deployment/tuition-no-worry tuition-no-worry=${{ secrets.ACR_LOGIN_SERVER }}/tuition-no-worry:${{ github.sha }}
+#           kubectl rollout status deployment/tuition-no-worry
+#
+# Notes:
+# - Replace secrets with GitHub repository secrets or use OIDC with Azure Workload Identity.
+# - This workflow is for demonstration only; adapt node images, tags, and deployment steps to your repo's manifests/Helm charts.

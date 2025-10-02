@@ -1,4 +1,14 @@
 import { PrismaClient, Day, UserSex } from "@prisma/client";
+import type {
+  Subject,
+  Grade,
+  Admin,
+  Parent,
+  Teacher,
+  Class as ClassModel,
+  Student as StudentModel,
+  Lesson as LessonModel,
+} from "@prisma/client";
 import { faker } from "@faker-js/faker";
 
 const prisma = new PrismaClient();
@@ -18,7 +28,7 @@ async function main() {
   const subjectNames = unique(() => faker.word.noun({ length: { min: 5, max: 12 } })
     .replace(/[^a-z]/gi, "")
     .slice(0, 1).toUpperCase() + faker.word.noun().slice(1), 20);
-  const subjects = [];
+  const subjects: Subject[] = [];
   for (const name of subjectNames) {
     const subject = await prisma.subject.upsert({
       where: { name },
@@ -30,7 +40,7 @@ async function main() {
 
   // ---------- GRADES (5 levels) ----------
   const gradeLevels = [1, 2, 3, 4, 5];
-  const grades = [];
+  const grades: Grade[] = [];
   for (const level of gradeLevels) {
     const grade = await prisma.grade.upsert({
       where: { level },
@@ -46,13 +56,13 @@ async function main() {
     await prisma.admin.upsert({
       where: { username },
       update: {},
-      create: { username },
+      create: { id: faker.string.uuid(), username },
     });
   }
 
   // ---------- PARENTS (80) ----------
   const parentPhones = unique(() => phoneWithLeading("9"), 80); // unique phones
-  const parents = [];
+  const parents: Parent[] = [];
   for (let i = 0; i < 80; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
@@ -62,6 +72,7 @@ async function main() {
       where: { username },
       update: {},
       create: {
+        id: faker.string.uuid(),
         username,
         name: first,
         surname: last,
@@ -74,7 +85,7 @@ async function main() {
   }
 
   // ---------- TEACHERS (12) ----------
-  const teachers = [];
+  const teachers: Teacher[] = [];
   for (let i = 0; i < 12; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
@@ -85,6 +96,7 @@ async function main() {
       where: { username },
       update: {},
       create: {
+        id: faker.string.uuid(),
         username,
         name: first,
         surname: last,
@@ -101,7 +113,7 @@ async function main() {
   }
 
   // ---------- CLASSES (20) ----------
-  const classes = [];
+  const classes: ClassModel[] = [];
   for (let i = 0; i < 20; i++) {
     const grade = pick(grades);
     const name = `Class ${grade.level}-${faker.string.alphanumeric({ length: 3 }).toUpperCase()}`;
@@ -120,7 +132,7 @@ async function main() {
   }
 
   // ---------- STUDENTS (111) ----------
-  const students = [];
+  const students: StudentModel[] = [];
   for (let i = 0; i < 111; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
@@ -134,6 +146,7 @@ async function main() {
       where: { username },
       update: {},
       create: {
+        id: faker.string.uuid(),
         username,
         name: first,
         surname: last,
@@ -153,7 +166,7 @@ async function main() {
   }
 
   // ---------- LESSONS (20) ----------
-  const lessons = [];
+  const lessons: LessonModel[] = [];
   for (let i = 0; i < 20; i++) {
     const subject = pick(subjects);
     const cls = pick(classes);
@@ -219,7 +232,9 @@ async function main() {
       await prisma.attendance.create({
         data: {
           date: lesson.startTime,
-          present: faker.datatype.boolean(0.85),
+          // faker.datatype.boolean does not accept a probability argument in typings;
+          // use Math.random() for a probability check to keep types happy.
+          present: Math.random() < 0.85,
           lessonId: lesson.id,
           studentId: s.id,
         },
