@@ -61,3 +61,8 @@ tf-aks-storage/
 tf-iam/
 modules/
 modules/storage/
+
+# Helm charts (ignore chart scaffolds and package archives)
+charts/
+*.tgz
+charts/*.tgz
