@@ -35,3 +35,23 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Terraform (temporary - ignores .tf files, state, and local caches)
+# NOTE: .gitignore does not untrack files already committed. To remove tracked terraform files,
+# run: git rm --cached <path> or use the commands in the project README.
+*.tf
+*.tfvars
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore the tf-acr and tf-aks directories (keep them locally, don't track in git)
+tf-acr/
+tf-aks/
