@@ -73,7 +73,7 @@ POSTGRES_DB=mydb
 
 # Prisma / app database URL
 # DATABASE_URL=postgresql://myuser:mypassword@postgres:5432/mydb
-DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>
+DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
 
 # Clerk (auth) keys 
 CLERK_SECRET_KEY= [add your secret key here]
