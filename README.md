@@ -1,4 +1,4 @@
-# To Run as Docker Container
+# README
 
 ## Prerequisites
 
