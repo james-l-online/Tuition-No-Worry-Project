@@ -1,4 +1,4 @@
-# README
+# To Run as Container
 
 ## Prerequisites
 
@@ -12,10 +12,11 @@
 
 - **Docker Compose example**
 
-Replace values with your own in a local `.env` (do not commit secrets). Example placeholder:
+Replace values with your own in a local `.env` (do not commit secrets). Example:
 
 ```sh
 DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
+
 ```
 
 ---
@@ -23,7 +24,8 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 ## **Create Test Users in Clerk**
 
 - Go to "Users" in Clerk dashboard.
-- Create users for role: `admin`
+- Create user for role: `admin`
+
 - In each user, go into Profile.
    Scroll down to Metadata, then edit Public
 - Set `public_metadata` for user:
@@ -32,7 +34,9 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 {
 "role": "admin"
 }
+
 ```
+
 ---
 
 ## **Configure Clerk Session Claims**
@@ -46,6 +50,7 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 		"role": "{{user.public_metadata.role}}"
 	}
 }
+
 ```
 
 ---
@@ -83,6 +88,7 @@ PRISMA_STUDIO_PORT=5555
 
 # If you need the container to chown mounted files on startup (development only)
 # CHOWN_ON_STARTUP=false
+
 ```
 
 ---
@@ -100,12 +106,14 @@ init-chown pattern (dev only).
 # from repo root
 docker compose build --no-cache
 docker compose up -d
+
 ```
 
 - To run app, open in browser:
 
 ```powershell
 http://localhost:3000/
+
 ```
 
 login with your created clerk account earlier

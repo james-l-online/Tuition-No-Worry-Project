@@ -1,8 +1,5 @@
 version: "3.9"
 services:
-  web:
-    build: .
-    image: tutionapp:latest
   postgres:
     image: postgres:15
     environment:
@@ -21,6 +18,7 @@ services:
 
   app:
     build: .
+    image: tuitionapp:latest
     # run the container process as the non-root user created in the Dockerfile (UID 1000) aka node
     user: "1000:1000"
     depends_on:
