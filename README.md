@@ -14,7 +14,7 @@
 
 Replace values with your own in a local `.env` (do not commit secrets). Example placeholder:
 
-```
+```sh
 DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
 ```
 
@@ -23,14 +23,14 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 ## **Create Test Users in Clerk**
 
 - Go to "Users" in Clerk dashboard.
-- Create users for each role: `parent`, `teacher`, `student`, `admin`
+- Create users for each role: `admin`
 - In each user, go into Profile.
    Scroll down to Metadata, then edit Public
-- Set `public_metadata` for each user:
+- Set `public_metadata` for user:
 
 ```yaml
 {
-"role": "parent"
+"role": "admin"
 }
 ```
 
@@ -42,7 +42,6 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 
 - Go to Clerk dashboard → Configure → Session Management → Customize session token
 - Add under Claims:
-- repeat for all 4 roles created.
 
 ```yaml
 {
