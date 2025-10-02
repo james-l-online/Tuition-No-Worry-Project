@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+dist
+build
+.env
+.env.local
+.env.*.local
+coverage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/*.log
+/.vscode
+/.idea
+*.tgz
+*.tgz
