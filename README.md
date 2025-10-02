@@ -23,7 +23,7 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 ## **Create Test Users in Clerk**
 
 - Go to "Users" in Clerk dashboard.
-- Create users for each role: `admin`
+- Create users for role: `admin`
 - In each user, go into Profile.
    Scroll down to Metadata, then edit Public
 - Set `public_metadata` for user:
@@ -33,9 +33,6 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 "role": "admin"
 }
 ```
-
-- save and repeat for each role
-
 ---
 
 ## **Configure Clerk Session Claims**
@@ -92,14 +89,7 @@ PRISMA_STUDIO_PORT=5555
 
 ## Docker dev note: file ownership (important)
 
-This project runs the app as a non-root container user (UID 1000). If you develop with bind mounts,
-you should make the host project files owned by UID 1000 so the container user can read/write them.
-See `docker/README.md` for full platform-specific commands. Quick copy/paste examples:
-
-- Linux / macOS / WSL:
-   sudo chown -R 1000:1000 .
-   docker compose up --build
-- Windows (no WSL): prefer building and running the image without bind mounts, or use WSL to chown files.
+This project runs the app as a non-root container user (UID 1000)
 
 If you prefer an init chown step instead of changing host ownership, see `docker/README.md` for an optional
 init-chown pattern (dev only).
@@ -118,7 +108,7 @@ docker compose up -d
 http://localhost:3000/
 ```
 
-login with your created clerk accounts earlier
+login with your created clerk account earlier
 
 ---
 
