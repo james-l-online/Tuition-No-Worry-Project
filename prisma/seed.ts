@@ -40,8 +40,8 @@ async function main() {
     grades.push(grade);
   }
 
-  // ---------- ADMINS (20) ----------
-  for (let i = 0; i < 20; i++) {
+  // ---------- ADMINS (8) ----------
+  for (let i = 0; i < 8; i++) {
     const username = `admin_${faker.string.alphanumeric({ length: 10 })}`.toLowerCase();
     await prisma.admin.upsert({
       where: { username },
@@ -50,10 +50,10 @@ async function main() {
     });
   }
 
-  // ---------- PARENTS (20) ----------
-  const parentPhones = unique(() => phoneWithLeading("9"), 20); // unique phones
+  // ---------- PARENTS (80) ----------
+  const parentPhones = unique(() => phoneWithLeading("9"), 80); // unique phones
   const parents = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 80; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
     const username = `${first}.${last}.${faker.string.alphanumeric({ length: 4 })}`.toLowerCase();
@@ -73,9 +73,9 @@ async function main() {
     parents.push(parent);
   }
 
-  // ---------- TEACHERS (20) ----------
+  // ---------- TEACHERS (12) ----------
   const teachers = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 12; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
     const username = `${first}.${last}.${faker.string.alphanumeric({ length: 5 })}`.toLowerCase();
@@ -119,9 +119,9 @@ async function main() {
     classes.push(cls);
   }
 
-  // ---------- STUDENTS (20) ----------
+  // ---------- STUDENTS (111) ----------
   const students = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 111; i++) {
     const first = faker.person.firstName();
     const last = faker.person.lastName();
     const username = `${first}.${last}.${faker.string.alphanumeric({ length: 6 })}`.toLowerCase();

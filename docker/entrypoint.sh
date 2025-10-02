@@ -33,7 +33,15 @@ npx prisma migrate deploy
 
 if [ "${PRISMA_SEED_ON_START:-false}" = "true" ]; then
   echo "Seeding (prisma db seed)…"
-  npx prisma db seed || true
+  # If a precompiled JS seed exists (prisma/seed.js), run it directly so seeding works
+  # in the runtime image without devDependencies (ts-node).
+  if [ -f "/app/prisma/seed.js" ]; then
+    echo "Running runtime JS seed: /app/prisma/seed.js"
+    node /app/prisma/seed.js || true
+  else
+    # Fallback to 'npx prisma db seed' which requires dev deps/tools.
+    npx prisma db seed || true
+  fi
 fi
 
 if [ "${PRISMA_STUDIO:-false}" = "true" ]; then
@@ -42,6 +50,11 @@ if [ "${PRISMA_STUDIO:-false}" = "true" ]; then
 fi
 
 echo "Starting app…"
+  if [ "${DEBUG_LIST_APP:-false}" = "true" ]; then
+    echo "--- DEBUG: listing /app ---"
+    ls -la /app || true
+    echo "--- end debug ---"
+  fi
 exec "$@"
 
 # Notes:
