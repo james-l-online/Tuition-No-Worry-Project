@@ -11,6 +11,9 @@ RUN npm ci
 FROM node:22-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache openssl
+# Allow passing a DATABASE_URL at build time (some pages may run Prisma during build)
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 # Copy only node_modules from deps (cached) and the minimal source files needed to build
 # This avoids sending the entire repo and improves Docker cache efficiency.
 COPY --from=deps /app/node_modules ./node_modules
