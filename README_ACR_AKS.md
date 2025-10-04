@@ -1,5 +1,5 @@
 # Tuition No Worry — Final Demo Guide 
-## (ACR + AKS + Public Postgres + tfstate Storage)
+## (ACR + AKS + Postgres + tfstate Storage)
 This consolidated guide shows how to provision Azure resources (AKS, ACR, PostgreSQL Flexible Server), push a container image, manage secrets, and deploy the app with Helm. It merges the quick-demo flow and the Azure preflight steps we need to achieve our demo.
 
 Key points:
