@@ -14,6 +14,8 @@ RUN apk add --no-cache openssl
 # Allow passing a DATABASE_URL at build time (some pages may run Prisma during build)
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
+ARG SKIP_DB_DURING_BUILD=true
+ENV SKIP_DB_DURING_BUILD=${SKIP_DB_DURING_BUILD}
 # Copy only node_modules from deps (cached) and the minimal source files needed to build
 # This avoids sending the entire repo and improves Docker cache efficiency.
 COPY --from=deps /app/node_modules ./node_modules

@@ -3,7 +3,7 @@ import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
@@ -103,42 +103,44 @@ const StudentListPage = async ({
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.StudentWhereInput = {};
-
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
-          case "teacherId":
-            query.class = {
-              lessons: {
-                some: {
-                  teacherId: value,
-                },
-              },
-            };
-            break;
-          case "search":
-            query.name = { contains: value, mode: "insensitive" };
-            break;
+          case 'teacherId':
+            whereClauses.push(`s.class_id IN (SELECT class_id FROM lesson WHERE teacher_id = $${idx})`)
+            params.push(value)
+            idx++
+            break
+          case 'search':
+            whereClauses.push(`s.name ILIKE $${idx}`)
+            params.push(`%${value}%`)
+            idx++
+            break
           default:
-            break;
+            break
         }
       }
     }
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.student.findMany({
-      where: query,
-      include: {
-        class: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.student.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+  const dataSql = `SELECT s.*, json_build_object('id', c.id, 'name', c.name) as class
+    FROM student s JOIN class c ON c.id = s.class_id
+    ${whereSQL}
+    ORDER BY s.created_at DESC
+    LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*) as count FROM student s ${whereSQL}`
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+  const data = dataRes.rows.map((r: any) => ({ ...r, class: r.class }))
+  const count = Number(countRes.rows[0]?.count || 0)
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

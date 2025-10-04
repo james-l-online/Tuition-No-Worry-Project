@@ -1,0 +1,2 @@
+IMAGE_REPOSITORY=tnwregistry0folki.azurecr.io/tuition-no-worry
+IMAGE_TAG=bdfcc5a

@@ -27,7 +27,7 @@ const EventList = async ({
     },
   });
 
-  return data.map((event) => (
+  return data.map((event: any) => (
     <div
       className="p-5 rounded-md border-2 border-gray-100 border-t-4 odd:border-t-lamaSky even:border-t-lamaPurple"
       key={event.id}

@@ -2,8 +2,8 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
-import { Class, Prisma, Subject, Teacher } from "@prisma/client";
+import db from "@/lib/db";
+import { Class, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
@@ -109,41 +109,49 @@ const TeacherListPage = async ({
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.TeacherWhereInput = {};
-
+  // Build SQL WHERE clauses from query params (simple translation)
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
-          case "classId":
-            query.lessons = {
-              some: {
-                classId: parseInt(value),
-              },
-            };
-            break;
-          case "search":
-            query.name = { contains: value, mode: "insensitive" };
-            break;
+          case 'classId':
+            whereClauses.push(`t.id IN (SELECT teacher_id FROM subject_teacher st JOIN subject s ON s.id = st.subject_id WHERE s.id IN (SELECT subject_id FROM lesson WHERE class_id = $${idx}))`)
+            params.push(parseInt(value))
+            idx++
+            break
+          case 'search':
+            whereClauses.push(`t.name ILIKE $${idx}`)
+            params.push(`%${value}%`)
+            idx++
+            break
           default:
-            break;
+            break
         }
       }
     }
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.teacher.findMany({
-      where: query,
-      include: {
-        subjects: true,
-        classes: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.teacher.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+  // Fetch teachers with subjects and classes aggregated
+  const dataSql = `SELECT t.*,
+    (SELECT json_agg(json_build_object('id', s.id, 'name', s.name)) FROM subject s JOIN subject_teacher st ON s.id = st.subject_id WHERE st.teacher_id = t.id) AS subjects,
+    (SELECT json_agg(json_build_object('id', c.id, 'name', c.name)) FROM class c WHERE c.supervisor_id = t.id) AS classes
+    FROM teacher t
+    ${whereSQL}
+    ORDER BY t.created_at DESC
+    LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*) AS count FROM teacher t ${whereSQL}`
+
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+  const data = dataRes.rows.map((r: any) => ({ ...r, subjects: r.subjects || [], classes: r.classes || [] }))
+  const count = Number(countRes.rows[0]?.count || 0)
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

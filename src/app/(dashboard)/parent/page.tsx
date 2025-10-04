@@ -18,7 +18,7 @@ const ParentPage = async () => {
     <div className="flex-1 p-4 flex gap-4 flex-col xl:flex-row">
       {/* LEFT */}
       <div className="">
-        {students.map((student) => (
+  {students.map((student: any) => (
           <div className="w-full xl:w-2/3" key={student.id}>
             <div className="h-full bg-white p-4 rounded-md">
               <h1 className="text-xl font-semibold">

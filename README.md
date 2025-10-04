@@ -81,6 +81,20 @@ PRISMA_SEED_ON_START=false
 PRISMA_STUDIO=false
 PRISMA_STUDIO_PORT=5555
 
+## Database changes (Prisma deprecated)
+
+This project is moving away from Prisma due to runtime issues in AKS. The repo now includes plain SQL migrations and seeds under `sql/` and a lightweight Postgres helper at `src/lib/db.ts`.
+
+How to run locally:
+
+1. Ensure `DATABASE_URL` is set (Postgres connection string).
+2. Create schema: `psql "$DATABASE_URL" -f sql/schema.sql`
+3. Seed: `psql "$DATABASE_URL" -f sql/seed.sql`
+
+API routes: Basic CRUD API routes are being added under `src/app/api/*` (example: `src/app/api/teachers`).
+
+If you previously relied on `prisma/seed.ts` or other Prisma-based code, see `src/lib/prisma.ts` which now throws in production and instructs developers to migrate call sites to `src/lib/db.ts`.
+
 # If you need the container to chown mounted files on startup (development only)
 # CHOWN_ON_STARTUP=false
 ```
