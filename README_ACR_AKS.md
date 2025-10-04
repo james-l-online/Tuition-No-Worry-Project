@@ -114,7 +114,7 @@ az vm list-usage --location "$LOCATION" -o table
 
 
 
-## Quick-demo flow (public Postgres path)
+## Quick-demo flow
 
 Follow this order to provision resources and deploy the app.
 
