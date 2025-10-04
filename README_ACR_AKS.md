@@ -10,7 +10,7 @@ Build the Next.js app image, push it to Azure Container Registry (ACR), and depl
 
 ---
 
-## Architecture (short)
+## Architecture (quick summary)
 - App: Next.js (TypeScript) built into a Docker image via `Dockerfile`.
 - Registry: Azure Container Registry (ACR) in `eastasia` (created by `tf-acr`).
 - Cluster: AKS created by `tf-aks` (VNet + Subnet + AKS cluster).
@@ -19,7 +19,7 @@ Build the Next.js app image, push it to Azure Container Registry (ACR), and depl
 
 ---
 
-## Files / Terraform layout (what to show)
+## Files / Terraform layout 
 - `tf-acr/` — create ACR (admin enabled for demo) and outputs:
   - `acr_login_server` (login server)
   - `acr_resource_id` (resource id)
