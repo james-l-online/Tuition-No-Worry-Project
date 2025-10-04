@@ -2,9 +2,9 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Class, Prisma, Teacher } from "@prisma/client";
+import type { Class, Teacher } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
@@ -78,38 +78,47 @@ const renderRow = (item: ClassList) => (
 
   const p = page ? parseInt(page) : 1;
 
-  // URL PARAMS CONDITION
-
-  const query: Prisma.ClassWhereInput = {};
-
+  // Build WHERE clauses and params
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
-          case "supervisorId":
-            query.supervisorId = value;
-            break;
-          case "search":
-            query.name = { contains: value, mode: "insensitive" };
-            break;
+          case 'supervisorId':
+            whereClauses.push(`c.supervisor_id = $${idx}`)
+            params.push(value)
+            idx++
+            break
+          case 'search':
+            whereClauses.push(`c.name ILIKE $${idx}`)
+            params.push(`%${value}%`)
+            idx++
+            break
           default:
-            break;
+            break
         }
       }
     }
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.class.findMany({
-      where: query,
-      include: {
-        supervisor: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.class.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+  const dataSql = `SELECT c.*, json_build_object('id', t.id, 'name', t.name, 'surname', t.surname) AS supervisor
+    FROM class c
+    LEFT JOIN teacher t ON t.id = c.supervisor_id
+    ${whereSQL}
+  ORDER BY c.name ASC
+    LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*) AS count FROM class c ${whereSQL}`
+
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+  const data = dataRes.rows.map((r: any) => ({ ...r, supervisor: r.supervisor || null }))
+  const count = Number(countRes.rows[0]?.count || 0)
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

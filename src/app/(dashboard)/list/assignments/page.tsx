@@ -2,9 +2,9 @@ import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Assignment, Class, Prisma, Subject, Teacher } from "@prisma/client";
+import type { Assignment, Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
@@ -88,24 +88,29 @@ const AssignmentListPage = async ({
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.AssignmentWhereInput = {};
-
-  query.lesson = {};
+  // Build WHERE clauses and params
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
           case "classId":
-            query.lesson.classId = parseInt(value);
+            whereClauses.push(`l.class_id = $${idx}`)
+            params.push(parseInt(value))
+            idx++
             break;
           case "teacherId":
-            query.lesson.teacherId = value;
+            whereClauses.push(`l.teacher_id::text = $${idx}`)
+            params.push(value)
+            idx++
             break;
           case "search":
-            query.lesson.subject = {
-              name: { contains: value, mode: "insensitive" },
-            };
+            whereClauses.push(`s.name ILIKE $${idx}`)
+            params.push(`%${value}%`)
+            idx++
             break;
           default:
             break;
@@ -114,53 +119,40 @@ const AssignmentListPage = async ({
     }
   }
 
-  // ROLE CONDITIONS
-
-  switch (role) {
-    case "admin":
-      break;
-    case "teacher":
-      query.lesson.teacherId = currentUserId!;
-      break;
-    case "student":
-      query.lesson.class = {
-        students: {
-          some: {
-            id: currentUserId!,
-          },
-        },
-      };
-      break;
-    case "parent":
-      query.lesson.class = {
-        students: {
-          some: {
-            parentId: currentUserId!,
-          },
-        },
-      };
-      break;
-    default:
-      break;
+  // Role-based conditions
+  if (role === "teacher") {
+  whereClauses.push(`l.teacher_id::text = $${idx}`)
+    params.push(currentUserId)
+    idx++
+  } else if (role === "student") {
+    whereClauses.push(`EXISTS (SELECT 1 FROM student s WHERE s.class_id = l.class_id AND s.id = $${idx})`)
+    params.push(currentUserId)
+    idx++
+  } else if (role === "parent") {
+    whereClauses.push(`EXISTS (SELECT 1 FROM student s WHERE s.class_id = l.class_id AND s.parent_id = $${idx})`)
+    params.push(currentUserId)
+    idx++
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.assignment.findMany({
-      where: query,
-      include: {
-        lesson: {
-          select: {
-            subject: { select: { name: true } },
-            teacher: { select: { name: true, surname: true } },
-            class: { select: { name: true } },
-          },
-        },
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.assignment.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+  const dataSql = `SELECT a.*, s.name AS subject_name, c.name AS class_name, t.name AS teacher_name, t.surname AS teacher_surname FROM assignment a JOIN lesson l ON l.id = a.lesson_id JOIN subject s ON s.id = l.subject_id JOIN class c ON c.id = l.class_id LEFT JOIN teacher t ON t.id = l.teacher_id ${whereSQL} ORDER BY a.due_date DESC LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*)::int AS count FROM assignment a JOIN lesson l ON l.id = a.lesson_id JOIN subject s ON s.id = l.subject_id JOIN class c ON c.id = l.class_id ${whereSQL}`
+
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+
+  const data = dataRes.rows.map((r: any) => ({
+    ...r,
+    lesson: {
+      subject: { name: r.subject_name },
+      class: { name: r.class_name },
+      teacher: { name: r.teacher_name, surname: r.teacher_surname },
+    },
+  }))
+  const count = Number(countRes.rows[0]?.count || 0)
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       {/* TOP */}

@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import Image from "next/image";
 
 const UserCard = async ({
@@ -6,14 +6,16 @@ const UserCard = async ({
 }: {
   type: "admin" | "teacher" | "student" | "parent";
 }) => {
-  const modelMap: Record<typeof type, any> = {
-    admin: prisma.admin,
-    teacher: prisma.teacher,
-    student: prisma.student,
-    parent: prisma.parent,
+  const tableMap: Record<typeof type, string> = {
+    admin: "admin",
+    teacher: "teacher",
+    student: "student",
+    parent: "parent",
   };
 
-  const data = await modelMap[type].count();
+  const table = tableMap[type];
+  const res = await db.query(`SELECT COUNT(*) AS count FROM "${table}"`);
+  const data = parseInt(res.rows[0]?.count ?? "0");
 
   return (
     <div className="rounded-2xl odd:bg-lamaPurple even:bg-lamaYellow p-4 flex-1 min-w-[130px]">

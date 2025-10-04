@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import FormModal from "./FormModal";
 import { auth } from "@clerk/nextjs/server";
 
@@ -31,43 +31,32 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
   if (type !== "delete") {
     switch (table) {
       case "subject":
-        const subjectTeachers = await prisma.teacher.findMany({
-          select: { id: true, name: true, surname: true },
-        });
-        relatedData = { teachers: subjectTeachers };
+        const tRes = await db.query(`SELECT id, name, surname FROM teacher ORDER BY name`)
+        relatedData = { teachers: tRes.rows };
         break;
       case "class":
-        const classGrades = await prisma.grade.findMany({
-          select: { id: true, level: true },
-        });
-        const classTeachers = await prisma.teacher.findMany({
-          select: { id: true, name: true, surname: true },
-        });
-        relatedData = { teachers: classTeachers, grades: classGrades };
+        const gRes = await db.query(`SELECT id, level FROM grade ORDER BY level`)
+        const ctRes = await db.query(`SELECT id, name, surname FROM teacher ORDER BY name`)
+        relatedData = { teachers: ctRes.rows, grades: gRes.rows };
         break;
       case "teacher":
-        const teacherSubjects = await prisma.subject.findMany({
-          select: { id: true, name: true },
-        });
-        relatedData = { subjects: teacherSubjects };
+        const sRes = await db.query(`SELECT id, name FROM subject ORDER BY name`)
+        relatedData = { subjects: sRes.rows };
         break;
       case "student":
-        const studentGrades = await prisma.grade.findMany({
-          select: { id: true, level: true },
-        });
-        const studentClasses = await prisma.class.findMany({
-          include: { _count: { select: { students: true } } },
-        });
-        relatedData = { classes: studentClasses, grades: studentGrades };
+        const sgRes = await db.query(`SELECT id, level FROM grade ORDER BY level`)
+        const scRes = await db.query(`SELECT c.*, (SELECT COUNT(*) FROM student s WHERE s.class_id = c.id) as students_count FROM class c ORDER BY c.name`)
+        relatedData = { classes: scRes.rows, grades: sgRes.rows };
         break;
       case "exam":
-        const examLessons = await prisma.lesson.findMany({
-          where: {
-            ...(role === "teacher" ? { teacherId: currentUserId! } : {}),
-          },
-          select: { id: true, name: true },
-        });
-        relatedData = { lessons: examLessons };
+        let examSql = `SELECT id, name FROM lesson`
+        const examParams: any[] = []
+        if (role === "teacher") {
+          examSql += ` WHERE teacher_id::text = $1`
+          examParams.push(currentUserId)
+        }
+        const elRes = await db.query(examSql, examParams)
+        relatedData = { lessons: elRes.rows };
         break;
 
       default:

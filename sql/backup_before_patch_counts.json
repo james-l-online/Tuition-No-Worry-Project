@@ -1,0 +1,10 @@
+{
+  "teacher": 1,
+  "parent": 1,
+  "student": 1,
+  "lesson": 0,
+  "result": 0,
+  "attendance": 0,
+  "message": 2,
+  "subject_teacher": 1
+}

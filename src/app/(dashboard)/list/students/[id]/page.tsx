@@ -3,9 +3,9 @@ import BigCalendarContainer from "@/components/BigCalendarContainer";
 import FormContainer from "@/components/FormContainer";
 import Performance from "@/components/Performance";
 import StudentAttendanceCard from "@/components/StudentAttendanceCard";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { Class, Student } from "@prisma/client";
+import type { Class, Student } from "@prisma/client";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
@@ -20,16 +20,36 @@ const SingleStudentPage = async ({
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const student:
-    | (Student & {
-        class: Class & { _count: { lessons: number } };
-      })
-    | null = await prisma.student.findUnique({
-    where: { id },
-    include: {
-      class: { include: { _count: { select: { lessons: true } } } },
-    },
-  });
+  const res = await db.query(
+    `SELECT s.id, s.name, s.surname, s.img, s.birthday, s.email, s.phone, s.blood_type, s.class_id,
+      c.name AS class_name, c.id AS class_id,
+      (SELECT COUNT(*) FROM lesson l WHERE l.class_id = c.id) AS lessons_count
+      FROM student s
+      LEFT JOIN class c ON c.id = s.class_id
+      WHERE s.id = $1
+      LIMIT 1`,
+    [id]
+  );
+
+  const row = res.rows[0];
+
+  const student = row
+    ? ({
+        id: row.id,
+        name: row.name,
+        surname: row.surname,
+        img: row.img,
+        birthday: row.birthday ? new Date(row.birthday) : null,
+        email: row.email,
+        phone: row.phone,
+        bloodType: row.blood_type,
+        class: {
+          id: row.class_id,
+          name: row.class_name,
+          _count: { lessons: parseInt(row.lessons_count ?? 0) },
+        },
+      } as unknown as Student & { class: Class & { _count: { lessons: number } } })
+    : null;
 
   if (!student) {
     return notFound();

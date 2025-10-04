@@ -1,28 +1,43 @@
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 
 const Announcements = async () => {
   const { userId, sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const roleConditions = {
-    teacher: { lessons: { some: { teacherId: userId! } } },
-    student: { students: { some: { id: userId! } } },
-    parent: { students: { some: { parentId: userId! } } },
-  };
+  // Build role-based visibility SQL
+  let whereClause = "";
+  const params: any[] = [];
 
-  const data = await prisma.announcement.findMany({
-    take: 3,
-    orderBy: { date: "desc" },
-    where: {
-      ...(role !== "admin" && {
-        OR: [
-          { classId: null },
-          { class: roleConditions[role as keyof typeof roleConditions] || {} },
-        ],
-      }),
-    },
-  });
+  if (role !== "admin") {
+    switch (role) {
+      case "teacher":
+        params.push(userId);
+  whereClause = `WHERE (a.class_id IS NULL OR EXISTS (SELECT 1 FROM lesson l WHERE l.class_id = a.class_id AND l.teacher_id::text = $1))`;
+        break;
+      case "student":
+        params.push(userId);
+        whereClause = `WHERE (a.class_id IS NULL OR EXISTS (SELECT 1 FROM student s WHERE s.id = $1 AND EXISTS (SELECT 1 FROM class_student cs WHERE cs.class_id = a.class_id AND cs.student_id = s.id)))`;
+        break;
+      case "parent":
+        params.push(userId);
+        whereClause = `WHERE (a.class_id IS NULL OR EXISTS (SELECT 1 FROM student s WHERE s.parent_id = $1 AND EXISTS (SELECT 1 FROM class_student cs WHERE cs.class_id = a.class_id AND cs.student_id = s.id)))`;
+        break;
+      default:
+        whereClause = "WHERE a.class_id IS NULL";
+    }
+  }
+
+  const res = await db.query(
+    `SELECT a.id, a.title, a.description, a.date
+      FROM announcement a
+      ${whereClause}
+      ORDER BY a.date DESC
+      LIMIT 3`,
+    params
+  );
+
+  const data = res.rows;
 
   return (
     <div className="bg-white p-4 rounded-md">

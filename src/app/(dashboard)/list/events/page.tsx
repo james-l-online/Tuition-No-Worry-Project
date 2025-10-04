@@ -2,13 +2,12 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Class, Event, Prisma } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
-type EventList = Event & { class: Class };
+type EventList = any;
 
 const EventListPage = async ({
   searchParams,
@@ -95,50 +94,56 @@ const EventListPage = async ({
 
   const p = page ? parseInt(page) : 1;
 
-  // URL PARAMS CONDITION
+  // Build SQL WHERE clauses and params
+  const whereClauses: string[] = [];
+  const params: any[] = [];
 
-  const query: Prisma.EventWhereInput = {};
-
-  if (queryParams) {
-    for (const [key, value] of Object.entries(queryParams)) {
-      if (value !== undefined) {
-        switch (key) {
-          case "search":
-            query.title = { contains: value, mode: "insensitive" };
-            break;
-          default:
-            break;
-        }
-      }
-    }
+  // search
+  if (queryParams && queryParams.search) {
+    params.push(`%${queryParams.search}%`);
+    whereClauses.push(`e.title ILIKE $${params.length}`);
   }
 
-  // ROLE CONDITIONS
+  // role-based condition: (class_id IS NULL OR <roleCondition>)
+  let roleCondition = "TRUE";
+  if (role === "teacher") {
+    params.push(currentUserId);
+  roleCondition = `e.class_id IN (SELECT class_id FROM lesson WHERE teacher_id::text = $${params.length})`;
+  } else if (role === "student") {
+    params.push(currentUserId);
+    roleCondition = `e.class_id = (SELECT class_id FROM student WHERE id = $${params.length})`;
+  } else if (role === "parent") {
+    params.push(currentUserId);
+    roleCondition = `e.class_id IN (SELECT class_id FROM student WHERE parent_id = $${params.length})`;
+  } else {
+    // admin or unspecified role -> allow all
+    roleCondition = "TRUE";
+  }
 
-  const roleConditions = {
-    teacher: { lessons: { some: { teacherId: currentUserId! } } },
-    student: { students: { some: { id: currentUserId! } } },
-    parent: { students: { some: { parentId: currentUserId! } } },
-  };
+  whereClauses.push(`(e.class_id IS NULL OR (${roleCondition}))`);
 
-  query.OR = [
-    { classId: null },
-    {
-      class: roleConditions[role as keyof typeof roleConditions] || {},
-    },
-  ];
+  const whereSql = whereClauses.length ? whereClauses.join(" AND ") : "TRUE";
 
-  const [data, count] = await prisma.$transaction([
-    prisma.event.findMany({
-      where: query,
-      include: {
-        class: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.event.count({ where: query }),
-  ]);
+  const limit = ITEM_PER_PAGE;
+  const offset = ITEM_PER_PAGE * (p - 1);
+
+  const dataSql = `SELECT e.id, e.title, e.description, e.start_time as "startTime", e.end_time as "endTime", e.class_id, c.name as "class_name", c.id as "class_id" FROM event e LEFT JOIN class c ON e.class_id = c.id WHERE ${whereSql} ORDER BY e.start_time DESC LIMIT ${limit} OFFSET ${offset}`;
+
+  const countSql = `SELECT COUNT(*)::int as count FROM event e WHERE ${whereSql}`;
+
+  const dataRes = await db.query(dataSql, params);
+  const countRes = await db.query(countSql, params);
+
+  const data = dataRes.rows.map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    startTime: r.startTime,
+    endTime: r.endTime,
+    class: r.class_id ? { id: r.class_id, name: r.class_name } : null,
+  }));
+
+  const count = countRes.rows[0] ? Number(countRes.rows[0].count) : 0;
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

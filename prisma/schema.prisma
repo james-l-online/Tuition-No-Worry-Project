@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+// REMOVED: prisma schema.prisma — moved to sql/schema.sql and archived
+// The canonical SQL schema is now under sql/schema.sql
 }
 
 datasource db {

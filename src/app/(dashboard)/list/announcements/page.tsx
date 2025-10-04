@@ -2,9 +2,9 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Announcement, Class, Prisma } from "@prisma/client";
+import type { Announcement, Class, Prisma } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
@@ -72,14 +72,19 @@ const AnnouncementListPage = async ({
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.AnnouncementWhereInput = {};
+  // Build WHERE clauses
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.title = { contains: value, mode: "insensitive" };
+            whereClauses.push(`a.title ILIKE $${idx}`)
+            params.push(`%${value}%`)
+            idx++
             break;
           default:
             break;
@@ -88,32 +93,40 @@ const AnnouncementListPage = async ({
     }
   }
 
-  // ROLE CONDITIONS
+  // Role-based visibility: announcements where class_id IS NULL OR class is visible to user
+  // We'll implement teacher/student/parent restrictions using EXISTS subqueries
+  const visibilityClauses: string[] = []
+  visibilityClauses.push(`a.class_id IS NULL`)
+  if (role === "teacher") {
+    visibilityClauses.push(`EXISTS (SELECT 1 FROM lesson l WHERE l.class_id = a.class_id AND l.teacher_id = $${idx})`)
+    params.push(currentUserId)
+    idx++
+  } else if (role === "student") {
+    visibilityClauses.push(`EXISTS (SELECT 1 FROM student s WHERE s.class_id = a.class_id AND s.id = $${idx})`)
+    params.push(currentUserId)
+    idx++
+  } else if (role === "parent") {
+    visibilityClauses.push(`EXISTS (SELECT 1 FROM student s WHERE s.class_id = a.class_id AND s.parent_id = $${idx})`)
+    params.push(currentUserId)
+    idx++
+  }
 
-  const roleConditions = {
-    teacher: { lessons: { some: { teacherId: currentUserId! } } },
-    student: { students: { some: { id: currentUserId! } } },
-    parent: { students: { some: { parentId: currentUserId! } } },
-  };
+  const visibilitySQL = `(${visibilityClauses.join(' OR ')})`
+  if (visibilitySQL) {
+    whereClauses.push(visibilitySQL)
+  }
 
-  query.OR = [
-    { classId: null },
-    {
-      class: roleConditions[role as keyof typeof roleConditions] || {},
-    },
-  ];
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
 
-  const [data, count] = await prisma.$transaction([
-    prisma.announcement.findMany({
-      where: query,
-      include: {
-        class: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.announcement.count({ where: query }),
-  ]);
+  const dataSql = `SELECT a.*, json_build_object('id', c.id, 'name', c.name) AS class FROM announcement a LEFT JOIN class c ON c.id = a.class_id ${whereSQL} ORDER BY a.date DESC LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*)::int AS count FROM announcement a LEFT JOIN class c ON c.id = a.class_id ${whereSQL}`
+
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+  const data = dataRes.rows.map((r: any) => ({ ...r, class: r.class || null }))
+  const count = Number(countRes.rows[0]?.count || 0)
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

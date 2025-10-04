@@ -1,14 +1,13 @@
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 
 const StudentAttendanceCard = async ({ id }: { id: string }) => {
-  const attendance = await prisma.attendance.findMany({
-    where: {
-      studentId: id,
-      date: {
-        gte: new Date(new Date().getFullYear(), 0, 1),
-      },
-    },
-  });
+  const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+  const res = await db.query(
+    `SELECT present FROM attendance WHERE student_id = $1 AND date >= $2`,
+    [id, startOfYear]
+  );
+
+  const attendance = res.rows;
 
   const totalDays = attendance.length;
   const presentDays = attendance.filter((day: any) => day.present).length;

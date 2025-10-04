@@ -11,42 +11,53 @@ until nc -z postgres 5432 >/dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
 done
 [ $RETRIES -eq 0 ] && { echo "ERROR: PG tcp unreachable"; exit 1; }
 
-echo "Ensuring DB exists (prisma db create)…"
-# If DATABASE_URL contains placeholder tokens like <POSTGRES_USER>, try to construct
-# it from individual POSTGRES_* env vars. This helps when using docker-compose with
-# environment placeholders.
-if [ -z "${DATABASE_URL:-}" ] || echo "${DATABASE_URL}" | grep -q "<POSTGRES_"; then
+if [ -z "${DATABASE_URL:-}" ] \
+  || echo "${DATABASE_URL}" | grep -q "<POSTGRES_" \
+  || echo "${DATABASE_URL:-}" | grep -Eq "(localhost|127\\.0\\.0\\.1)"; then
   if [ -n "${POSTGRES_USER:-}" ] && [ -n "${POSTGRES_PASSWORD:-}" ] && [ -n "${POSTGRES_DB:-}" ]; then
     export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&sslmode=disable"
     echo "Constructed DATABASE_URL from POSTGRES_* env vars"
   else
-    echo "WARNING: DATABASE_URL not set or contains placeholders. Set DATABASE_URL or POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB in your .env"
+    echo "WARNING: DATABASE_URL not set or contains placeholders/points to localhost. Set DATABASE_URL or POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB in your .env"
   fi
 fi
 
-# The `prisma db create` command is no longer available in Prisma v4+. We'll rely on
-# migrations (deploy) to create/apply schema. If you need to create the DB manually,
-# create the Postgres database from the host or use a one-off container.
+# Print a masked DATABASE_URL for debugging (hide credentials)
+if [ -n "${DATABASE_URL:-}" ]; then
+  # extract host portion safely
+  DBHOST=$(echo "${DATABASE_URL}" | sed -E 's#.*@([^:/]+).*#\1#' || echo "<unknown>")
+  echo "Using DATABASE host: ${DBHOST}"
+fi
 
-echo "Applying migrations (prisma migrate deploy)…"
-npx prisma migrate deploy
+# Seeding:
 
-if [ "${PRISMA_SEED_ON_START:-false}" = "true" ]; then
-  echo "Seeding (prisma db seed)…"
-  # If a precompiled JS seed exists (prisma/seed.js), run it directly so seeding works
-  # in the runtime image without devDependencies (ts-node).
-  if [ -f "/app/prisma/seed.js" ]; then
-    echo "Running runtime JS seed: /app/prisma/seed.js"
-    node /app/prisma/seed.js || true
+if [ "${SQL_SEED_ON_START:-false}" = "true" ]; then
+  # First apply schema (if provided), then run the consolidated data seed.
+  if [ -f "/app/sql/schema.sql" ]; then
+    echo "Applying SQL schema: /app/sql/schema.sql"
+    if [ -f "/app/scripts/run-sql-seed.js" ]; then
+      node /app/scripts/run-sql-seed.js /app/sql/schema.sql || true
+    elif command -v psql >/dev/null 2>&1; then
+      psql "$DATABASE_URL" -f /app/sql/schema.sql || true
+    else
+      echo "No SQL runner (node script or psql) available; skipping schema apply."
+    fi
   else
-    # Fallback to 'npx prisma db seed' which requires dev deps/tools.
-    npx prisma db seed || true
+    echo "No /app/sql/schema.sql found; skipping schema apply."
   fi
-fi
 
-if [ "${PRISMA_STUDIO:-false}" = "true" ]; then
-  echo "Starting Prisma Studio on ${PRISMA_STUDIO_PORT:-5555}…"
-  (npx prisma studio --port "${PRISMA_STUDIO_PORT:-5555}" &) || true
+  echo "Running consolidated SQL seed (if present): /app/sql/seed-full.sql"
+  if [ -f "/app/sql/seed-full.sql" ]; then
+    if [ -f "/app/scripts/run-sql-seed.js" ]; then
+      node /app/scripts/run-sql-seed.js /app/sql/seed-full.sql || true
+    elif command -v psql >/dev/null 2>&1; then
+      psql "$DATABASE_URL" -f /app/sql/seed-full.sql || true
+    else
+      echo "No SQL runner (node script or psql) available; skipping SQL seed."
+    fi
+  else
+    echo "No /app/sql/seed-full.sql found; skipping SQL seed."
+  fi
 fi
 
 echo "Starting app…"
@@ -56,12 +67,3 @@ echo "Starting app…"
     echo "--- end debug ---"
   fi
 exec "$@"
-
-# Notes:
-# - If you mount host volumes into /app (for development), file ownership may be root on the container.
-#   Set CHOWN_ON_STARTUP=true to attempt a chown -R /app to the runtime user (UID 1007).
-#   Example in docker-compose:
-#     environment:
-#       - CHOWN_ON_STARTUP=true
-# - chown requires the container to run as a user that can perform chown (root). If you are running
-#   the container as non-root, leave CHOWN_ON_STARTUP unset and make sure host side ownership maps to UID 1007.

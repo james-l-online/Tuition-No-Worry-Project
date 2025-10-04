@@ -1,6 +1,6 @@
 import Image from "next/image";
 import AttendanceChart from "./AttendanceChart";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 
 const AttendanceChartContainer = async () => {
   const today = new Date();
@@ -11,17 +11,8 @@ const AttendanceChartContainer = async () => {
 
   lastMonday.setDate(today.getDate() - daysSinceMonday);
 
-  const resData = await prisma.attendance.findMany({
-    where: {
-      date: {
-        gte: lastMonday,
-      },
-    },
-    select: {
-      date: true,
-      present: true,
-    },
-  });
+  const res = await db.query(`SELECT date, present FROM attendance WHERE date >= $1`, [lastMonday])
+  const resData = res.rows
 
   // console.log(data)
 

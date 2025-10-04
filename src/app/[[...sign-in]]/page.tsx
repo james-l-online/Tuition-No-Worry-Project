@@ -5,22 +5,35 @@ import * as SignIn from "@clerk/elements/sign-in";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-const LoginPage = () => {
+export default function LoginPage() {
   const { isLoaded, isSignedIn, user } = useUser();
-
   const router = useRouter();
+  const navigatedRef = useRef(false);
 
   useEffect(() => {
-    const role = user?.publicMetadata.role;
-
-    if (role) {
-      router.push(`/${role}`);
+    if (!isLoaded) return;
+    if (isSignedIn && !navigatedRef.current) {
+      // If the sign-in page was reached via a server-driven sign-in flow with a
+      // `returnTo` query parameter, skip client-side navigation — the server
+      // redirect will handle it. This avoids duplicate navigations (one from
+      // the server and one from the client) that produced repeated GETs.
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('returnTo')) return;
+      navigatedRef.current = true;
+      const role = (user as any)?.publicMetadata?.role;
+      if (role) {
+        router.replace(`/${role}`);
+      } else {
+        router.replace(`/`);
+      }
     }
-  }, [user, router]);
+  }, [isLoaded, isSignedIn, user, router]);
 
-if (!isSignedIn) {
+  if (!isLoaded) return null;
+  if (isSignedIn) return null;
+
   return (
     <div className="h-screen flex items-center justify-center bg-lamaSkyLight">
       <SignIn.Root>
@@ -30,14 +43,12 @@ if (!isSignedIn) {
         >
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Image src="/logo.png" alt="" width={24} height={24} />
-            Tution No Worry
+            Tuition No Worry
           </h1>
           <h2 className="text-gray-400">Sign in to your account</h2>
           <Clerk.GlobalError className="text-sm text-red-400" />
           <Clerk.Field name="identifier" className="flex flex-col gap-2">
-            <Clerk.Label className="text-xs text-gray-500">
-              Username
-            </Clerk.Label>
+            <Clerk.Label className="text-xs text-gray-500">Username</Clerk.Label>
             <Clerk.Input
               type="text"
               required
@@ -46,9 +57,7 @@ if (!isSignedIn) {
             <Clerk.FieldError className="text-xs text-red-400" />
           </Clerk.Field>
           <Clerk.Field name="password" className="flex flex-col gap-2">
-            <Clerk.Label className="text-xs text-gray-500">
-              Password
-            </Clerk.Label>
+            <Clerk.Label className="text-xs text-gray-500">Password</Clerk.Label>
             <Clerk.Input
               type="password"
               required
@@ -66,7 +75,4 @@ if (!isSignedIn) {
       </SignIn.Root>
     </div>
   );
-};
-};
-
-export default LoginPage;
+}

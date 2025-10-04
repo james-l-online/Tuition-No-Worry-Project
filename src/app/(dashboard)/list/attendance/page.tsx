@@ -1,13 +1,15 @@
 import Table from "@/components/Table";
 import Pagination from "@/components/Pagination";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Prisma, Attendance } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
-type AttendanceRow = Attendance & {
+type AttendanceRow = {
+  id: number;
+  date: string;
+  present: boolean;
   student: { name: string; surname: string };
   lesson: { name: string };
 };
@@ -29,7 +31,7 @@ const AttendancePage = async ({ searchParams }: { searchParams: { [key: string]:
     <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
       <td className="flex items-center gap-4 p-4">{item.student.name} {item.student.surname}</td>
       <td>{item.lesson.name}</td>
-      <td className="hidden md:table-cell">{new Intl.DateTimeFormat("en-US").format(item.date)}</td>
+  <td className="hidden md:table-cell">{new Intl.DateTimeFormat("en-US").format(new Date(item.date))}</td>
       <td>{item.present ? "Present" : "Absent"}</td>
       <td>
         {/* actions could be added here */}
@@ -40,21 +42,25 @@ const AttendancePage = async ({ searchParams }: { searchParams: { [key: string]:
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  const query: Prisma.AttendanceWhereInput = {};
+  // Build WHERE clauses and params
+  const where: string[] = [];
+  const params: any[] = [];
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
           case "studentId":
-            query.studentId = value;
+            params.push(value);
+            where.push(`a.student_id = $${params.length}`);
             break;
           case "lessonId":
-            query.lessonId = parseInt(value);
+            params.push(parseInt(value));
+            where.push(`a.lesson_id = $${params.length}`);
             break;
           case "search":
-            // search by student name
-            query.student = { name: { contains: value, mode: "insensitive" } };
+            params.push(`%${value}%`);
+            where.push(`s.name ILIKE $${params.length}`);
             break;
           default:
             break;
@@ -63,33 +69,59 @@ const AttendancePage = async ({ searchParams }: { searchParams: { [key: string]:
     }
   }
 
-  // Role filters
   switch (role) {
     case "admin":
       break;
     case "teacher":
-      query.lesson = { teacherId: currentUserId! };
+      // lessons taught by current user
+      params.push(currentUserId);
+  where.push(`l.teacher_id::text = $${params.length}`);
       break;
     case "student":
-      query.studentId = currentUserId!;
+      params.push(currentUserId);
+      where.push(`a.student_id = $${params.length}`);
       break;
     case "parent":
-      query.student = { parentId: currentUserId! };
+      params.push(currentUserId);
+      where.push(`s.parent_id = $${params.length}`);
       break;
     default:
       break;
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.attendance.findMany({
-      where: query,
-      include: { student: { select: { name: true, surname: true } }, lesson: { select: { name: true } } },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-      orderBy: { date: "desc" },
-    }),
-    prisma.attendance.count({ where: query }),
-  ]);
+  const whereSQL = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const offset = ITEM_PER_PAGE * (p - 1);
+
+  const dataRes = await db.query(
+    `SELECT a.id, a.date, a.present, json_build_object('name', s.name, 'surname', s.surname) AS student, json_build_object('name', l.name) AS lesson
+      FROM attendance a
+      JOIN student s ON s.id = a.student_id
+      JOIN lesson l ON l.id = a.lesson_id
+      ${whereSQL}
+      ORDER BY a.date DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, ITEM_PER_PAGE, offset]
+  );
+
+  const countRes = await db.query(
+    `SELECT COUNT(*) AS count
+      FROM attendance a
+      JOIN student s ON s.id = a.student_id
+      JOIN lesson l ON l.id = a.lesson_id
+      ${whereSQL}`,
+    params
+  );
+
+  const data: AttendanceRow[] = dataRes.rows.map((r: any) => ({
+    id: r.id,
+    date: r.date,
+    present: r.present,
+    student: r.student,
+    lesson: r.lesson,
+  }));
+
+  const count = parseInt(countRes.rows[0]?.count ?? "0");
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

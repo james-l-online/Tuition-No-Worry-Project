@@ -67,7 +67,7 @@ POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
 POSTGRES_DB=mydb
 
-# Prisma / app database URL
+# App database URL (Postgres)
 # DATABASE_URL=postgresql://myuser:mypassword@postgres:5432/mydb
 DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
 
@@ -76,10 +76,8 @@ CLERK_SECRET_KEY= [add your secret key here]
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [add your publishable key here]
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
 
-# Prisma options
-PRISMA_SEED_ON_START=false
-PRISMA_STUDIO=false
-PRISMA_STUDIO_PORT=5555
+# Seeds: enable SQL seeding on container start (development only)
+SQL_SEED_ON_START=false
 
 ## Database changes (Prisma deprecated)
 
@@ -89,7 +87,17 @@ How to run locally:
 
 1. Ensure `DATABASE_URL` is set (Postgres connection string).
 2. Create schema: `psql "$DATABASE_URL" -f sql/schema.sql`
-3. Seed: `psql "$DATABASE_URL" -f sql/seed.sql`
+3. Seed: `psql "$DATABASE_URL" -f sql/seed-full.sql`
+
+Alternatively you can run the included Node helper which reads `DATABASE_URL`:
+
+PowerShell
+
+$env:DATABASE_URL = 'postgres://user:pass@localhost:5432/db'
+node scripts/run-sql-seed.js sql/schema.sql
+node scripts/run-sql-seed.js sql/seed-full.sql
+
+See `sql/README.md` for more details.
 
 API routes: Basic CRUD API routes are being added under `src/app/api/*` (example: `src/app/api/teachers`).
 
@@ -125,5 +133,31 @@ http://localhost:3000/
 login with your created clerk account earlier
 
 ---
+
+## Running the consolidated SQL seed (docker)
+
+This repository includes a single consolidated SQL file `sql/seed-full.sql` which applies the necessary
+type-conversion ALTERs (uuid -> text for some id columns) and then inserts the large idempotent dev seed.
+
+Important: The ALTERs in `sql/seed-full.sql` are irreversible and intended for development only. Do NOT run
+this file against production. Back up your database before running.
+
+To run the consolidated seed automatically during container startup, enable the env var in `.env` or `docker-compose.yml`:
+
+```env
+SQL_SEED_ON_START=true
+```
+
+When enabled the container entrypoint will run `/app/scripts/run-sql-seed.js /app/sql/seed-full.sql` after the
+DB becomes available. You can also run it manually from your host (requires `psql` or the node runner):
+
+PowerShell:
+
+```powershell
+# $env:DATABASE_URL = 'postgresql://tnw_user:tnw_pass@127.0.0.1:5432/tuition_dev?schema=public&sslmode=disable'
+# node scripts/run-sql-seed.js sql/seed-full.sql
+# or using psql (if psql is installed):
+# psql "$env:DATABASE_URL" -f sql/seed-full.sql
+```
 
 ## 

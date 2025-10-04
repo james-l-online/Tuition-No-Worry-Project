@@ -7,7 +7,7 @@ CREATE TYPE day_enum AS ENUM ('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'
 
 -- admin
 CREATE TABLE IF NOT EXISTS admin (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY,
   username text UNIQUE NOT NULL
 );
 
@@ -23,12 +23,14 @@ CREATE TABLE IF NOT EXISTS class (
   name text UNIQUE NOT NULL,
   capacity int NOT NULL,
   supervisor_id uuid NULL,
-  grade_id int NOT NULL REFERENCES grade(id) ON DELETE CASCADE
+  grade_id int NOT NULL REFERENCES grade(id) ON DELETE CASCADE,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- teacher
 CREATE TABLE IF NOT EXISTS teacher (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY,
   username text UNIQUE NOT NULL,
   name text NOT NULL,
   surname text NOT NULL,
@@ -39,12 +41,13 @@ CREATE TABLE IF NOT EXISTS teacher (
   blood_type text NOT NULL,
   sex user_sex NOT NULL,
   created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
   birthday timestamptz NOT NULL
 );
 
 -- parent
 CREATE TABLE IF NOT EXISTS parent (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY,
   username text UNIQUE NOT NULL,
   name text NOT NULL,
   surname text NOT NULL,
@@ -58,6 +61,8 @@ CREATE TABLE IF NOT EXISTS parent (
 CREATE TABLE IF NOT EXISTS subject (
   id serial PRIMARY KEY,
   name text UNIQUE NOT NULL
+  ,created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- lesson
@@ -69,7 +74,9 @@ CREATE TABLE IF NOT EXISTS lesson (
   end_time timestamptz NOT NULL,
   subject_id int NOT NULL REFERENCES subject(id) ON DELETE CASCADE,
   class_id int NOT NULL REFERENCES class(id) ON DELETE CASCADE,
-  teacher_id uuid NOT NULL REFERENCES teacher(id) ON DELETE CASCADE
+  teacher_id text NOT NULL REFERENCES teacher(id) ON DELETE CASCADE
+  ,created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- exam
@@ -79,6 +86,8 @@ CREATE TABLE IF NOT EXISTS exam (
   start_time timestamptz NOT NULL,
   end_time timestamptz NOT NULL,
   lesson_id int NOT NULL REFERENCES lesson(id) ON DELETE CASCADE
+  ,created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- assignment
@@ -88,11 +97,13 @@ CREATE TABLE IF NOT EXISTS assignment (
   start_date timestamptz NOT NULL,
   due_date timestamptz NOT NULL,
   lesson_id int NOT NULL REFERENCES lesson(id) ON DELETE CASCADE
+  ,created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- student
 CREATE TABLE IF NOT EXISTS student (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY,
   username text UNIQUE NOT NULL,
   name text NOT NULL,
   surname text NOT NULL,
@@ -103,7 +114,8 @@ CREATE TABLE IF NOT EXISTS student (
   blood_type text NOT NULL,
   sex user_sex NOT NULL,
   created_at timestamptz DEFAULT now(),
-  parent_id uuid NOT NULL REFERENCES parent(id) ON DELETE CASCADE,
+  updated_at timestamptz DEFAULT now(),
+  parent_id text NOT NULL REFERENCES parent(id) ON DELETE CASCADE,
   class_id int NOT NULL REFERENCES class(id) ON DELETE CASCADE,
   grade_id int NOT NULL REFERENCES grade(id) ON DELETE CASCADE,
   birthday timestamptz NOT NULL
@@ -115,7 +127,7 @@ CREATE TABLE IF NOT EXISTS result (
   score int NOT NULL,
   exam_id int NULL REFERENCES exam(id) ON DELETE SET NULL,
   assignment_id int NULL REFERENCES assignment(id) ON DELETE SET NULL,
-  student_id uuid NOT NULL REFERENCES student(id) ON DELETE CASCADE
+  student_id text NOT NULL REFERENCES student(id) ON DELETE CASCADE
 );
 
 -- attendance
@@ -123,7 +135,7 @@ CREATE TABLE IF NOT EXISTS attendance (
   id serial PRIMARY KEY,
   date timestamptz NOT NULL,
   present boolean NOT NULL,
-  student_id uuid NOT NULL REFERENCES student(id) ON DELETE CASCADE,
+  student_id text NOT NULL REFERENCES student(id) ON DELETE CASCADE,
   lesson_id int NOT NULL REFERENCES lesson(id) ON DELETE CASCADE
 );
 
@@ -149,17 +161,18 @@ CREATE TABLE IF NOT EXISTS announcement (
 -- message
 CREATE TABLE IF NOT EXISTS message (
   id serial PRIMARY KEY,
-  sender_id uuid NOT NULL,
-  receiver_id uuid NOT NULL,
+  sender_id text NOT NULL,
+  receiver_id text NOT NULL,
   content text NOT NULL,
   created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
   CONSTRAINT fk_sender FOREIGN KEY (sender_id) REFERENCES parent(id) ON DELETE CASCADE
 );
 
 -- junction table: subject_teacher
 CREATE TABLE IF NOT EXISTS subject_teacher (
   subject_id int NOT NULL REFERENCES subject(id) ON DELETE CASCADE,
-  teacher_id uuid NOT NULL REFERENCES teacher(id) ON DELETE CASCADE,
+  teacher_id text NOT NULL REFERENCES teacher(id) ON DELETE CASCADE,
   PRIMARY KEY (subject_id, teacher_id)
 );
 

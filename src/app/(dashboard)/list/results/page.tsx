@@ -2,9 +2,8 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Prisma } from "@prisma/client";
 import Image from "next/image";
 
 import { auth } from "@clerk/nextjs/server";
@@ -106,20 +105,21 @@ const renderRow = (item: ResultList) => (
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.ResultWhereInput = {};
+  // Build WHERE clauses and params
+  const where: string[] = [];
+  const params: any[] = [];
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
           case "studentId":
-            query.studentId = value;
+            params.push(value);
+            where.push(`r.student_id = $${params.length}`);
             break;
           case "search":
-            query.OR = [
-              { exam: { title: { contains: value, mode: "insensitive" } } },
-              { student: { name: { contains: value, mode: "insensitive" } } },
-            ];
+            params.push(`%${value}%`);
+            where.push(`(ex.title ILIKE $${params.length} OR s.name ILIKE $${params.length})`);
             break;
           default:
             break;
@@ -129,81 +129,79 @@ const renderRow = (item: ResultList) => (
   }
 
   // ROLE CONDITIONS
-
   switch (role) {
     case "admin":
       break;
     case "teacher":
-      query.OR = [
-        { exam: { lesson: { teacherId: currentUserId! } } },
-        { assignment: { lesson: { teacherId: currentUserId! } } },
-      ];
+      params.push(currentUserId);
+  where.push(`(lex_ex.teacher_id::text = $${params.length} OR lex_asg.teacher_id::text = $${params.length})`);
       break;
-
     case "student":
-      query.studentId = currentUserId!;
+      params.push(currentUserId);
+      where.push(`r.student_id = $${params.length}`);
       break;
-
     case "parent":
-      query.student = {
-        parentId: currentUserId!,
-      };
+      params.push(currentUserId);
+      where.push(`s.parent_id = $${params.length}`);
       break;
     default:
       break;
   }
 
-  const [dataRes, count] = await prisma.$transaction([
-    prisma.result.findMany({
-      where: query,
-      include: {
-        student: { select: { name: true, surname: true } },
-        exam: {
-          include: {
-            lesson: {
-              select: {
-                class: { select: { name: true } },
-                teacher: { select: { name: true, surname: true } },
-              },
-            },
-          },
-        },
-        assignment: {
-          include: {
-            lesson: {
-              select: {
-                class: { select: { name: true } },
-                teacher: { select: { name: true, surname: true } },
-              },
-            },
-          },
-        },
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.result.count({ where: query }),
-  ]);
+  const whereSQL = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
-  const data = dataRes.map((item: any) => {
-    const assessment = item.exam || item.assignment;
+  const offset = ITEM_PER_PAGE * (p - 1);
 
-    if (!assessment) return null;
+  const dataRes = await db.query(
+    `SELECT r.id,
+      COALESCE(ex.title, asg.title) AS title,
+      s.name AS student_name, s.surname AS student_surname,
+      COALESCE(t_ex.name, t_asg.name) AS teacher_name,
+      COALESCE(t_ex.surname, t_asg.surname) AS teacher_surname,
+      r.score,
+      COALESCE(c_ex.name, c_asg.name) AS class_name,
+      COALESCE(ex.start_time, asg.start_date) AS start_time
+    FROM result r
+    JOIN student s ON s.id = r.student_id
+    LEFT JOIN exam ex ON ex.id = r.exam_id
+    LEFT JOIN lesson lex_ex ON lex_ex.id = ex.lesson_id
+    LEFT JOIN teacher t_ex ON t_ex.id = lex_ex.teacher_id
+    LEFT JOIN class c_ex ON c_ex.id = lex_ex.class_id
+    LEFT JOIN assignment asg ON asg.id = r.assignment_id
+    LEFT JOIN lesson lex_asg ON lex_asg.id = asg.lesson_id
+    LEFT JOIN teacher t_asg ON t_asg.id = lex_asg.teacher_id
+    LEFT JOIN class c_asg ON c_asg.id = lex_asg.class_id
+    ${whereSQL}
+    ORDER BY start_time DESC NULLS LAST
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, ITEM_PER_PAGE, offset]
+  );
 
-    const isExam = "startTime" in assessment;
+  const countRes = await db.query(
+    `SELECT COUNT(*) AS count
+    FROM result r
+    JOIN student s ON s.id = r.student_id
+    LEFT JOIN exam ex ON ex.id = r.exam_id
+    LEFT JOIN lesson lex_ex ON lex_ex.id = ex.lesson_id
+    LEFT JOIN assignment asg ON asg.id = r.assignment_id
+    LEFT JOIN lesson lex_asg ON lex_asg.id = asg.lesson_id
+    ${whereSQL}`,
+    params
+  );
 
-    return {
-      id: item.id,
-      title: assessment.title,
-      studentName: item.student.name,
-      studentSurname: item.student.surname,
-      teacherName: assessment.lesson.teacher.name,
-      teacherSurname: assessment.lesson.teacher.surname,
-      score: item.score,
-      className: assessment.lesson.class.name,
-      startTime: isExam ? assessment.startTime : assessment.startDate,
-    };
-  });
+  const data = dataRes.rows.map((item: any) => ({
+    id: item.id,
+    title: item.title,
+    studentName: item.student_name,
+    studentSurname: item.student_surname,
+    teacherName: item.teacher_name,
+    teacherSurname: item.teacher_surname,
+    score: item.score,
+    className: item.class_name,
+    startTime: item.start_time ? new Date(item.start_time) : null,
+  }));
+
+  const count = parseInt(countRes.rows[0]?.count ?? "0");
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

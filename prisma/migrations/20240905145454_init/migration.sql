@@ -19,21 +19,18 @@ CREATE TABLE "Student" (
     "name" TEXT NOT NULL,
     "surname" TEXT NOT NULL,
     "email" TEXT,
-    "phone" TEXT,
     "address" TEXT NOT NULL,
     "img" TEXT,
-    "bloodType" TEXT NOT NULL,
     "sex" "UserSex" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "parentId" TEXT NOT NULL,
     "classId" INTEGER NOT NULL,
     "gradeId" INTEGER NOT NULL,
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Teacher" (
+    -- REMOVED: prisma migration SQL (archived). Use sql/seed-full.sql and sql/patch-*.sql
+    -- This migration is kept only for historical reference. Use sql/seed-full.sql for current dev flows.
     "id" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "name" TEXT NOT NULL,

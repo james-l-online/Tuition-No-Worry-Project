@@ -1,5 +1,4 @@
--- AlterTable
 ALTER TABLE "public"."_SubjectToTeacher" ADD CONSTRAINT "_SubjectToTeacher_AB_pkey" PRIMARY KEY ("A", "B");
-
 -- DropIndex
-DROP INDEX "public"."_SubjectToTeacher_AB_unique";
+-- REMOVED: prisma migration SQL (archived). Use sql/seed-full.sql and sql/patch-*.sql
+-- This file is intentionally left as an archive placeholder.

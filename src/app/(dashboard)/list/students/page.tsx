@@ -5,7 +5,7 @@ import TableSearch from "@/components/TableSearch";
 
 import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Class, Prisma, Student } from "@prisma/client";
+import type { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
@@ -111,7 +111,7 @@ const StudentListPage = async ({
       if (value !== undefined) {
         switch (key) {
           case 'teacherId':
-            whereClauses.push(`s.class_id IN (SELECT class_id FROM lesson WHERE teacher_id = $${idx})`)
+            whereClauses.push(`s.class_id IN (SELECT class_id FROM lesson WHERE teacher_id::text = $${idx})`)
             params.push(value)
             idx++
             break

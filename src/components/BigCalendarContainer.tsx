@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import BigCalendar from "./BigCalender";
 import { adjustScheduleToCurrentWeek } from "@/lib/utils";
 
@@ -9,19 +9,13 @@ const BigCalendarContainer = async ({
   type: "teacherId" | "classId";
   id: string | number;
 }) => {
-  const dataRes = await prisma.lesson.findMany({
-    where: {
-      ...(type === "teacherId"
-        ? { teacherId: id as string }
-        : { classId: id as number }),
-    },
-  });
-
-  const data = dataRes.map((lesson: any) => ({
+  const where = type === "teacherId" ? `teacher_id::text = $1` : `class_id = $1`
+  const res = await db.query(`SELECT name, start_time, end_time FROM lesson WHERE ${where}`, [id])
+  const data = res.rows.map((lesson: any) => ({
     title: lesson.name,
-    start: lesson.startTime,
-    end: lesson.endTime,
-  }));
+    start: lesson.start_time,
+    end: lesson.end_time,
+  }))
 
   const schedule = adjustScheduleToCurrentWeek(data);
 

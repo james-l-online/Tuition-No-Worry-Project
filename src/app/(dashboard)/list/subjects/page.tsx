@@ -2,9 +2,9 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Prisma, Subject, Teacher } from "@prisma/client";
+import type { Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
@@ -41,7 +41,7 @@ const SubjectListPage = async ({
     >
       <td className="flex items-center gap-4 p-4">{item.name}</td>
       <td className="hidden md:table-cell">
-        {item.teachers.map((teacher) => teacher.name).join(",")}
+        {item.teachers.map((teacher: Teacher) => teacher.name).join(",")}
       </td>
       <td>
         <div className="flex items-center gap-2">
@@ -62,14 +62,17 @@ const SubjectListPage = async ({
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.SubjectWhereInput = {};
-
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.name = { contains: value, mode: "insensitive" };
+            whereClauses.push(`s.name ILIKE $${idx}`)
+            params.push(`%${value}%`)
+            idx++
             break;
           default:
             break;
@@ -78,17 +81,17 @@ const SubjectListPage = async ({
     }
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.subject.findMany({
-      where: query,
-      include: {
-        teachers: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.subject.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+  const dataSql = `SELECT s.id, s.name, COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL), '[]') AS teachers FROM subject s LEFT JOIN subject_teacher st ON st.subject_id = s.id LEFT JOIN teacher t ON t.id = st.teacher_id ${whereSQL} GROUP BY s.id ORDER BY s.name ASC LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*)::int AS count FROM subject s ${whereSQL}`
+
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+  const data = dataRes.rows.map((r: any) => ({ ...r, teachers: r.teachers || [] }))
+  const count = Number(countRes.rows[0]?.count || 0)
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

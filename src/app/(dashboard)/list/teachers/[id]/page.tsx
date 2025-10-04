@@ -3,9 +3,9 @@ import BigCalendarContainer from "@/components/BigCalendarContainer";
 import BigCalendar from "@/components/BigCalender";
 import FormContainer from "@/components/FormContainer";
 import Performance from "@/components/Performance";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { Teacher } from "@prisma/client";
+import type { Teacher } from "@prisma/client";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
@@ -19,22 +19,32 @@ const SingleTeacherPage = async ({
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const teacher:
-    | (Teacher & {
-        _count: { subjects: number; lessons: number; classes: number };
-      })
-    | null = await prisma.teacher.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: {
-          subjects: true,
-          lessons: true,
-          classes: true,
-        },
-      },
-    },
-  });
+  const res = await db.query(
+    `SELECT t.id, t.name, t.surname, t.img, t.birthday, t.email, t.phone, t.blood_type,
+      (SELECT COUNT(*) FROM subject_teacher st WHERE st.teacher_id = t.id) AS subjects_count,
+      (SELECT COUNT(*) FROM lesson l WHERE l.teacher_id = t.id) AS lessons_count,
+      (SELECT COUNT(*) FROM class c WHERE c.supervisor_id = t.id) AS classes_count
+      FROM teacher t
+      WHERE t.id = $1
+      LIMIT 1`,
+    [id]
+  );
+
+  const row = res.rows[0];
+
+  const teacher = row
+    ? ({
+        id: row.id,
+        name: row.name,
+        surname: row.surname,
+        img: row.img,
+        birthday: row.birthday ? new Date(row.birthday) : null,
+        email: row.email,
+        phone: row.phone,
+        bloodType: row.blood_type,
+        _count: { subjects: parseInt(row.subjects_count ?? 0), lessons: parseInt(row.lessons_count ?? 0), classes: parseInt(row.classes_count ?? 0) },
+      } as unknown as Teacher & { _count: { subjects: number; lessons: number; classes: number } })
+    : null;
 
   if (!teacher) {
     return notFound();

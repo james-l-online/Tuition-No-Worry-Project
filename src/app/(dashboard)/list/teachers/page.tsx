@@ -3,7 +3,7 @@ import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 import db from "@/lib/db";
-import { Class, Subject, Teacher } from "@prisma/client";
+import type { Class, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
@@ -79,10 +79,10 @@ const TeacherListPage = async ({
       </td>
       <td className="hidden md:table-cell">{item.username}</td>
       <td className="hidden md:table-cell">
-        {item.subjects.map((subject) => subject.name).join(",")}
+        {item.subjects.map((subject: Subject) => subject.name).join(",")}
       </td>
       <td className="hidden md:table-cell">
-        {item.classes.map((classItem) => classItem.name).join(",")}
+        {item.classes.map((classItem: Class) => classItem.name).join(",")}
       </td>
       <td className="hidden md:table-cell">{item.phone}</td>
       <td className="hidden md:table-cell">{item.address}</td>

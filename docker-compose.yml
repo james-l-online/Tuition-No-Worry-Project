@@ -1,15 +1,15 @@
-version: "3.9"
 services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-tnw_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tnw_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-tuition_dev}
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      # use the env vars configured above so healthcheck checks the actual DB
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tnw_user} -d ${POSTGRES_DB:-tuition_dev}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,22 +27,26 @@ services:
     env_file:
       - .env
     environment:
-      # required
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: "production"
+      # Construct a safe default DATABASE_URL that points to the compose postgres service when
+      # DATABASE_URL is not provided in the host .env. This avoids 127.0.0.1 leaking into the
+      # container where Postgres is on the 'postgres' service.
+      DATABASE_URL: "${DATABASE_URL:-postgresql://${POSTGRES_USER:-tnw_user}:${POSTGRES_PASSWORD:-tnw_pass}@postgres:5432/${POSTGRES_DB:-tuition_dev}?schema=public&sslmode=disable}"
       # If you need the container to chown mounted files on startup, set this to "true".
       # NOTE: chown requires the container to be started as root; by default the service
       # runs as UID 1000 (non-root). Use this only in a development flow where you start
       # the service as root for an init step or run a one-shot chown container.
       CHOWN_ON_STARTUP: "false"
-
-      PRISMA_SEED_ON_START: "true"     # set "true" when you want to reseed
-      PRISMA_STUDIO: "true"            # set "true" to auto-run Prismatudio
-      PRISMA_STUDIO_PORT: "5555"
+      # Seeds: set SQL_SEED_ON_START to true to run /app/sql/seed-full.sql via the node runner.
+      SQL_SEED_ON_START: "true"         # set "true" to run /app/sql/seed-full.sql via node runner at startup
+      # Legacy Prisma flags removed. For an interactive DB UI, run your preferred tool separately.
     ports:
       - "3000:3000"
-      - "5555:5555"    # PrismaStudio
     restart: unless-stopped
+    # Mount the sql/ directory in dev to allow editing seeds without rebuilding the image.
+    # Uncomment for local development only (do not mount in production deployments).
+    # volumes:
+    #   - ./sql:/app/sql:ro
 
 volumes:
   postgres_data:

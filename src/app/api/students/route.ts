@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { requireRole } from '@/lib/auth'
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -11,6 +12,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
+    requireRole('admin')
+  } catch (err) {
+    if ((err as Error).message === 'UNAUTHORIZED') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   const body = await request.json()
   const res = await query(
     `INSERT INTO student (username,name,surname,email,phone,address,blood_type,sex,parent_id,class_id,grade_id,birthday)

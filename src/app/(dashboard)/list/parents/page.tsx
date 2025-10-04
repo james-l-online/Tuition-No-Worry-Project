@@ -2,14 +2,20 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Parent, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 
 import { auth } from "@clerk/nextjs/server";
 
-type ParentList = Parent & { students: Student[] };
+type ParentList = {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  students: { id: number; name: string }[];
+};
 
 const ParentListPage = async ({
   searchParams,
@@ -63,7 +69,7 @@ const renderRow = (item: ParentList) => (
       </div>
     </td>
     <td className="hidden md:table-cell">
-      {item.students.map((student) => student.name).join(",")}
+      {item.students.map((student: { id: number; name: string }) => student.name).join(",")}
     </td>
     <td className="hidden md:table-cell">{item.phone}</td>
     <td className="hidden md:table-cell">{item.address}</td>
@@ -86,14 +92,16 @@ const renderRow = (item: ParentList) => (
 
   // URL PARAMS CONDITION
 
-  const query: Prisma.ParentWhereInput = {};
-
+  // Build WHERE clauses
+  const whereClauses: string[] = [];
+  const params: any[] = [];
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.name = { contains: value, mode: "insensitive" };
+            params.push(`%${value}%`);
+            whereClauses.push(`p.name ILIKE $${params.length}`);
             break;
           default:
             break;
@@ -102,17 +110,40 @@ const renderRow = (item: ParentList) => (
     }
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.parent.findMany({
-      where: query,
-      include: {
-        students: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.parent.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  // Query parents with aggregated students
+  const offset = ITEM_PER_PAGE * (p - 1);
+
+  const dataRes = await db.query(
+    `SELECT p.id, p.name, p.email, p.phone, p.address,
+      COALESCE(json_agg(json_build_object('id', s.id, 'name', s.name)) FILTER (WHERE s.id IS NOT NULL), '[]') AS students
+      FROM parent p
+      LEFT JOIN student s ON s.parent_id = p.id
+      ${whereSQL}
+      GROUP BY p.id
+      ORDER BY p.name
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, ITEM_PER_PAGE, offset]
+  );
+
+  const countRes = await db.query(
+    `SELECT COUNT(DISTINCT p.id) AS count FROM parent p
+      LEFT JOIN student s ON s.parent_id = p.id
+      ${whereSQL}`,
+    params
+  );
+
+  const data: ParentList[] = dataRes.rows.map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    phone: r.phone,
+    address: r.address,
+    students: r.students ?? [],
+  }));
+
+  const count = parseInt(countRes.rows[0]?.count ?? "0");
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">

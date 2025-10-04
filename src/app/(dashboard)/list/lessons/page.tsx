@@ -2,9 +2,9 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
+import db from "@/lib/db";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Class, Lesson, Prisma, Subject, Teacher } from "@prisma/client";
+import type { Class, Lesson, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
@@ -74,46 +74,61 @@ const renderRow = (item: LessonList) => (
 
   const p = page ? parseInt(page) : 1;
 
-  // URL PARAMS CONDITION
-
-  const query: Prisma.LessonWhereInput = {};
-
+  // Build WHERE clauses and params
+  const whereClauses: string[] = []
+  const params: any[] = []
+  let idx = 1
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
-          case "classId":
-            query.classId = parseInt(value);
-            break;
-          case "teacherId":
-            query.teacherId = value;
-            break;
-          case "search":
-            query.OR = [
-              { subject: { name: { contains: value, mode: "insensitive" } } },
-              { teacher: { name: { contains: value, mode: "insensitive" } } },
-            ];
-            break;
+          case 'classId':
+            whereClauses.push(`l.class_id = $${idx}`)
+            params.push(parseInt(value))
+            idx++
+            break
+          case 'teacherId':
+            whereClauses.push(`l.teacher_id::text = $${idx}`)
+            params.push(value)
+            idx++
+            break
+          case 'search':
+            whereClauses.push(`(s.name ILIKE $${idx} OR t.name ILIKE $${idx})`)
+            params.push(`%${value}%`)
+            idx++
+            break
           default:
-            break;
+            break
         }
       }
     }
   }
 
-  const [data, count] = await prisma.$transaction([
-    prisma.lesson.findMany({
-      where: query,
-      include: {
-        subject: { select: { name: true } },
-        class: { select: { name: true } },
-        teacher: { select: { name: true, surname: true } },
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.lesson.count({ where: query }),
-  ]);
+  const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
+
+  const dataSql = `SELECT l.*, s.id AS subject_id, s.name AS subject_name, c.id AS class_id, c.name AS class_name, t.id AS teacher_id, t.name AS teacher_name, t.surname AS teacher_surname
+    FROM lesson l
+    JOIN subject s ON s.id = l.subject_id
+    JOIN class c ON c.id = l.class_id
+    LEFT JOIN teacher t ON t.id = l.teacher_id
+    ${whereSQL}
+    ORDER BY l.created_at DESC
+    LIMIT $${idx} OFFSET $${idx + 1}`
+  params.push(ITEM_PER_PAGE, ITEM_PER_PAGE * (p - 1))
+
+  const countSql = `SELECT COUNT(*) AS count FROM lesson l ${whereSQL}`
+
+  const dataRes = await db.query(dataSql, params)
+  const countRes = await db.query(countSql, params.slice(0, params.length - 2))
+
+  const data = dataRes.rows.map((r: any) => ({
+    ...r,
+    subject: { id: r.subject_id, name: r.subject_name },
+    class: { id: r.class_id, name: r.class_name },
+    teacher: r.teacher_id ? { id: r.teacher_id, name: r.teacher_name, surname: r.teacher_surname } : null,
+  }))
+
+  const count = Number(countRes.rows[0]?.count || 0)
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
