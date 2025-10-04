@@ -49,7 +49,7 @@ Build the Next.js app image, push it to Azure Container Registry (ACR), and depl
 - kubectl and Helm
 - Bash or PowerShell for the commands below
 - (Optional) kubeconfig access to AKS if you want Terraform to create the K8s secret directly
-
+** Before starting please ensure you have done the necessary steps in README_AZURE-PREFLIGHT.md
 ---
 
 ## Quick-demo flow (public Postgres path)
