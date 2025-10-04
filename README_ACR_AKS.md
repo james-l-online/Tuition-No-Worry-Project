@@ -107,7 +107,7 @@ az vm list-usage --location "$LOCATION" -o table
 
 Follow this order to provision resources and deploy the app.
 
-### 1) Provision tf-aks (network + AKS)
+### 1) Provision Azure Kubernetes Service cluster (network + AKS)
 
 ```bash
 cd ./tf-aks
