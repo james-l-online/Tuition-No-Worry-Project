@@ -27,5 +27,3 @@ terraform apply tfplan
 Security notes:
 - Avoid enabling admin user on ACR in production; prefer scoped service principals or managed identities.
 - Use a remote Terraform backend (Azure Storage) for state if collaborating.
-
-If you want, I can produce a commented runbook or CI example (GitHub Actions) that shows how to build, tag, and push images to this ACR.

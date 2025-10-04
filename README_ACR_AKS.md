@@ -1,15 +1,8 @@
 # Tuition No Worry — Final Demo Guide 
-This consolidated guide is tailored for our capstone project, where the main objective is to simulate a real-world DevOps workflow for deploying microservices on Azure Kubernetes Service (AKS). The application used is a simple Next.js app, serving as a stand-in to represent a typical microservice workload. The primary focus is not on the app's business logic, but on demonstrating the end-to-end DevOps process: provisioning Azure resources (AKS, Azure Container Registry, PostgreSQL Flexible Server with a private endpoint), building and pushing container images, managing secrets securely, and deploying to AKS using Helm. The guide emphasizes secure practices by using a private endpoint for PostgreSQL—ensuring the database is only accessible from within the AKS cluster's VNet—and leveraging Azure Managed Identity for AKS to pull images from ACR, eliminating the need for admin credentials during deployment.
+This guide outlines our capstone project simulating a real-world DevOps workflow on Azure Kubernetes Service (AKS). Using a simple Next.js app as a proxy workload, it demonstrates end-to-end practices: provisioning resources, building and publishing images, secure secret management, and Helm-based deployment. Emphasis is placed on security through private PostgreSQL endpoints and Azure Managed Identity for credential-free image pulls.
 
-In this demo we:
-- Set up Azure infrastructure for a simulated microservices deployment, including a private PostgreSQL Flexible Server with a private endpoint accessible only from the AKS cluster's VNet.
-- Use Terraform to automate resource provisioning, state management, and secure network configuration.
-- Build and push Docker images to Azure Container Registry (ACR).
-- Securely handle sensitive information such as database connection strings, ensuring the database is not exposed to the public internet.
-- Deploy and manage application releases on AKS using Helm charts.
-- Use a user-assigned managed identity (UAMI) for AKS to securely pull images from ACR, eliminating the need for admin credentials.
 
-This hands-on walkthrough merges the essential Azure preflight steps with a streamlined demo flow, providing a practical foundation for understanding DevOps practices in a cloud-native environment. The approach is designed to help you gain experience with the tools and processes used in modern DevOps pipelines, rather than focusing on the specifics of the application itself.
+This demo demonstrates a secure, automated microservices deployment on Azure: infrastructure provisioned with Terraform, images built and stored in ACR, secrets managed privately, and applications deployed to AKS with Helm using managed identities. The focus is on cloud-native DevOps practices rather than application logic.
 
 Key points:
 - This demo uses a **private PostgreSQL Flexible Server** with a private endpoint and Private DNS, ensuring the database is only accessible from within the AKS cluster's VNet. This simulates a production-grade, secure database setup.

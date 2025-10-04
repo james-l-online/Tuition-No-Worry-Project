@@ -51,5 +51,4 @@ Security notes:
 - Do not hard-code credentials or admin passwords in Terraform files checked into source control.
 - Prefer short-lived credentials and managed identities for resource access.
 
-If you'd like, I can add a small example showing how to attach the `uami_id` to the AKS cluster in `tf-aks/main.tf`.
 ````
