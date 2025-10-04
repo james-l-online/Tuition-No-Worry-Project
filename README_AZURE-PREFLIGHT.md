@@ -1,8 +1,8 @@
 # Azure Preflight Checklist
 
-This checklist gathers the commands, checks, and recommended values you should complete before running `terraform init/plan/apply` in the project's `tf-*` folders or deploying the Helm chart. It's a condensed, actionable checklist derived from `README_DEMO2.md` and the repo's Terraform modules.
+This checklist gathers the commands, checks, and recommended values you should complete before running `terraform init/plan/apply` in the project's `tf-*` folders or deploying the Helm chart.
 
-Use PowerShell (pwsh) or bash. Commands shown in blocks are for Bash; equivalent PowerShell examples are noted where helpful.
+Use PowerShell (pwsh) or bash. Commands shown in blocks are for Bash
 
 ---
 
@@ -287,9 +287,5 @@ cd tf-aks && terraform destroy -auto-approve -var="resource_group_name=tnw-rg"
 - Avoid storing DB credentials in GitHub repository secrets when possible — prefer creating K8s secrets from Terraform outputs locally or using Azure Key Vault.
 - Restrict `allowed_ip_ranges` to the smallest set of IPs required (CI runners, your office/home IP, etc.).
 - Prefer Service Principal + OIDC for CI authentication to Azure (more secure than admin passwords).
-
-If you want, I can also:
-- Add a small PowerShell or Bash helper to automate creating the K8s secret from Terraform outputs.
-- Scaffold GitHub Actions to use OIDC + Service Principal for secure pushes to ACR.
 
 ---
