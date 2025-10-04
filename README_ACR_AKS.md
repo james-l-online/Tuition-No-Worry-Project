@@ -1,137 +1,218 @@
-# Tuition No Worry — Demo Deployment (ACR + AKS + Public Postgres)
+# Tuition No Worry — Final Demo Guide 
+## (ACR + AKS + Public Postgres + tfstate Storage)
+This consolidated guide shows how to provision Azure resources (AKS, ACR, PostgreSQL Flexible Server), push a container image, manage secrets, and deploy the app with Helm. It merges the quick-demo flow and the Azure preflight steps we need to achieve our demo.
 
-This guide is designed for my capstone project and provides a step-by-step showcase of provisioning Azure resources (AKS, ACR, PostgreSQL Flexible Server), pushing a container image, managing secrets, and deploying with Helm. It demonstrates a public-access PostgreSQL server setup for learning purposes, with recommendations for securing access.
+Key points:
+- This demo uses a public PostgreSQL Flexible Server for convenience. Use private endpoints in production.
+- `tf-aks-storage` is used as a dedicated storage account (in its own resource group) to host Terraform state containers and store sensitive artifacts (secrets/connection strings). This keeps tfstate and secrets isolated from the main resource group.
+- All commands below are Bash.
 
 ---
 
 ## Goal
 
-Build the Next.js app image, push it to Azure Container Registry (ACR), and deploy to AKS using Helm. Provision a PostgreSQL Flexible Server (public-access) and wire the app to it using a Kubernetes secret. Keep security best-practices in mind (firewall rules, SSL, secret management).
+Build the Next.js app image, push it to Azure Container Registry (ACR), and deploy to AKS using Helm. Provision a PostgreSQL Flexible Server (public-access for demo) and wire the app to it using a Kubernetes secret. Use `tf-aks-storage` to host Terraform state and put secret artifacts in a separate resource group for safer handling.
 
 ---
 
-## Architecture (quick summary)
-- App: Next.js (TypeScript) built into a Docker image via `Dockerfile`.
-- Registry: Azure Container Registry (ACR) in `eastasia` (created by `tf-acr`).
-- Cluster: AKS created by `tf-aks` (VNet + Subnet + AKS cluster).
-- Database: Azure Database for PostgreSQL — Flexible Server (public-access by default for this demo) created by `tf-postgres`.
-- Deployment: Helm chart at `charts/tuition-no-worry` with `values.yaml` to configure image and db seeding.
+## Architecture (short)
+- App: Next.js (TypeScript) → Docker image
+- Registry: Azure Container Registry (ACR) — `tf-acr`
+- Cluster: AKS + VNet — `tf-aks`
+- Database: PostgreSQL Flexible Server (public-access by default for demo) — `tf-postgres`
+- Storage: Dedicated Storage Account & container for tfstate and secrets in its own resource group — `tf-aks-storage`
+- Deployment: Helm chart at `charts/tuition-no-worry` (values.yaml controls image and dbMigration)
 
 ---
 
-## Files / Terraform layout 
-- `tf-acr/` — create ACR (admin enabled for demo) and outputs:
-  - `acr_login_server` (login server)
-  - `acr_resource_id` (resource id)
-  - `acr_admin_username` and `acr_admin_password` (sensitive)
+## Files / Terraform layout
+- `tf-aks/` — VNet, Subnets, AKS cluster
+- `tf-acr/` — ACR, (admin enabled for demo)
+- `tf-postgres/` — PostgreSQL Flexible Server (public_access toggle + allowed_ip_ranges)
+- `tf-aks-storage/` — Storage account + container for Terraform state and secret artifacts. Deploys into a separate resource group (e.g. `tnw-storage-rg`).
+- `tf-iam/` — Optional user-assigned managed identity and role assignment (AcrPull for AKS)
 
-- `tf-aks/` — provisions VNet/subnet and AKS cluster (eastasia)
-
-- `tf-postgres/` — provisions PostgreSQL Flexible Server. Set `public_access=true` and pass `allowed_ip_ranges` to limit public access. The module outputs `postgresql_database_url` and an admin password (sensitive).
-
-- `tf-iam/` — user-assigned managed identity and `AcrPull` role assignment (optional; useful for production image pulls)
-
-- `tf-aks-storage/` — storage account and outputs (optional)
-
-- App & Deploy artifacts:
-  - `Dockerfile` — multi-stage image for Next.js
-  - `docker/entrypoint.sh` — waits for Postgres, constructs DATABASE_URL, optionally runs SQL seed
-  - `sql/schema.sql`, `sql/seed-full.sql` — consolidated SQL schema and seed
-  - `scripts/run-sql-seed.js` — Node script to run SQL files against DATABASE_URL
-  - `charts/tuition-no-worry/values.yaml` — Helm values (image repository, tag, dbMigration job, secrets)
+App & deploy artifacts
+- `Dockerfile`, `docker/entrypoint.sh`
+- `sql/schema.sql`, `sql/seed-full.sql`
+- `scripts/run-sql-seed.js`
+- `charts/tuition-no-worry/` (Helm chart)
 
 ---
 
-## Prerequisites
-- Terraform >= 1.2
-- Azure CLI (`az`) and a subscription with appropriate permissions
-- Docker
-- kubectl and Helm
-- Bash or PowerShell for the commands below
-- (Optional) kubeconfig access to AKS if you want Terraform to create the K8s secret directly
-- ** Before starting please ensure you have done the necessary steps in README_AZURE-PREFLIGHT.md
----
+## Preflight checklist (quick)
+
+1. Install tools and verify:
+
+```bash
+terraform version
+az version
+docker --version
+kubectl version --client
+helm version
+```
+
+2. Login to Azure and set subscription
+
+```bash
+az login
+az account set --subscription "<YOUR_SUBSCRIPTION_ID_OR_NAME>"
+```
+
+3. Optional: Create an automation Service Principal (for CI)
+
+```bash
+az ad sp create-for-rbac --name "tnw-sp" --role Contributor --sdk-auth > tnw-sp.json
+# Save tnw-sp.json securely and add its values to CI secrets (or use OIDC recommended flow)
+```
+
+4. Register resource providers (run once per subscription)
+
+```bash
+az provider register --namespace Microsoft.ContainerRegistry
+az provider register --namespace Microsoft.RedHat
+az provider register --namespace Microsoft.Compute
+az provider register --namespace Microsoft.Network
+az provider register --namespace Microsoft.DBforPostgreSQL
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.ManagedIdentity
+az provider register --namespace Microsoft.Authorization
+```
+
+5. Pick names and resource groups
+
+```bash
+# Example naming
+MAIN_RG=tnw-rg
+STORAGE_RG=tnw-storage-rg
+LOCATION=eastasia
+```
+
+Create resource groups (optional — Terraform modules can create them too):
+
+```bash
+az group create --name "$MAIN_RG" --location "$LOCATION"
+az group create --name "$STORAGE_RG" --location "$LOCATION"
+```
+
+6. Quotas: verify vCPU and SKU availability in `eastasia`
+
+```bash
+az vm list-usage --location "$LOCATION" -o table
+```
+
+
 
 ## Quick-demo flow (public Postgres path)
 
-This flow is designed to be quick to run while maintaining reasonable security via firewall restrictions.
+Follow this order to provision resources and deploy the app.
 
-### 1) Provision network & AKS
-
-Open a shell and run:
+### 1) Provision tf-aks (network + AKS)
 
 ```bash
 cd ./tf-aks
 terraform init
-terraform apply -auto-approve -var="resource_group_name=tnw-rg" -var="location=eastasia"
+terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location=$LOCATION"
 ```
 
-Take note of the VNet and subnet IDs if you plan to use private endpoints later. For this public demo you can skip private endpoint details.
+Take note of the VNet and subnet IDs for private endpoints later (optional).
 
-### 2) Provision public PostgreSQL Flexible Server
+### 2) Provision public PostgreSQL Flexible Server (demo)
 
-We recommend you restrict access using `allowed_ip_ranges`. For an open demo you can keep the list broader, but it's not recommended for production.
+Choose a server name and a tight `allowed_ip_ranges` CIDR (your IP / CI runner IPs).
 
 ```bash
-cd ./tf-postgres
+cd ../tf-postgres
 terraform init
 terraform apply -auto-approve \
-  -var="resource_group_name=tnw-rg" \
+  -var="resource_group_name=$MAIN_RG" \
   -var="server_name=tnw-pg-public-<unique>" \
   -var="public_access=true" \
-  -var='allowed_ip_ranges=["203.0.113.0/24"]'  #example range only
+  -var='allowed_ip_ranges=["$(curl -s https://api.ipify.org)/32"]'
 ```
 
-After the apply run:
+Capture outputs:
 
 ```bash
 terraform output -raw postgresql_database_url
-terraform output -raw postgres_admin_password  # sensitive
+terraform output -raw postgres_admin_password
 ```
 
-Save these values securely (or export them locally into env vars if seeding locally).
+Keep these safe (or export them into env vars for seeding).
 
-### 3) Provision ACR (demo CI path)
+### 3) Storage for tfstate & secrets: `tf-aks-storage` (separate RG)
+
+This repo includes `tf-aks-storage` to create a dedicated Storage Account and container to safely store Terraform state and sensitive artifacts. We deploy it into its own resource group (`$STORAGE_RG`) so state and storage keys are isolated from the main resources.
+
+Example apply:
+
+```bash
+cd tf-aks-storage
+terraform init
+terraform apply -auto-approve -var="resource_group_name=$STORAGE_RG" -var="location=$LOCATION" -var="storage_account_name=tnwstate<unique>"
+```
+
+Outputs you'll use:
+
+```bash
+terraform output storage_account_name
+terraform output storage_container_name
+terraform output storage_account_primary_connection_string  # treat as sensitive
+```
+
+Use the storage account/container for Terraform backend in other modules. Example backend config snippet to use in `tf-acr/backend.tf` or when running `terraform init`:
+
+```hcl
+backend "azurerm" {
+  resource_group_name  = "${STORAGE_RG}"
+  storage_account_name = "<storage_account_name>"
+  container_name       = "tfstate"
+  key                  = "tf-<module>.terraform.tfstate"
+}
+```
+
+Security note: Do not commit primary connection strings; write them into CI secrets or use managed identity access where possible.
+
+
+### 4) Provision ACR (demo CI path)
 
 ```bash
 cd ../tf-acr
 terraform init
-terraform apply -auto-approve -var="resource_group_name=tnw-rg" -var="acr_name=tnwregistry" -var="location=eastasia"
+terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="acr_name=tnwregistry" -var="location=$LOCATION"
 ```
 
-Capture outputs (for CI):
+Capture ACR outputs:
 
 ```bash
-terraform output acr_login_server
-terraform output acr_admin_username
+terraform output -raw acr_login_server
+terraform output -raw acr_admin_username
 terraform output -raw acr_admin_password
 ```
 
-Add these three values to GitHub repository secrets if you plan to use the included CI workflow.
+Add these three values to GitHub repository secrets only if you plan to use the included admin-based CI workflow. Prefer SP+OIDC in production.
 
-### 4) Create Kubernetes secret for the app
+### 5) Create Kubernetes secret for the app (preferred)
 
-Recommended: do not put the DB URL directly into GitHub Secrets. Create a k8s secret from the Terraform output:
+Avoid storing DB credentials in GitHub secrets. Create a k8s secret from `postgresql_database_url` locally:
 
 ```bash
 DB_URL=$(cd ../tf-postgres && terraform output -raw postgresql_database_url)
+# Ensure your kubeconfig points to the AKS cluster
 kubectl create secret generic tnw-database-url --from-literal=DATABASE_URL="$DB_URL" --namespace default
 ```
 
-Optional: let Terraform create the secret by setting `create_k8s_secret=true` in `tf-postgres` (requires kubeconfig access where you run Terraform).
+Optional: let `tf-postgres` create the secret if you set `create_k8s_secret=true` (requires kubeconfig where you run Terraform).
 
-### 5) CI build & push (example)
+### 6) CI build & push (example)
 
-Push to `starter` branch to trigger `.github/workflows/acr-admin-build-push.yml`. The workflow will:
-- Build Docker image
-- Login to ACR using admin credentials
-- Tag and push image to `${{ secrets.ACR_LOGIN_SERVER }}/tuition-no-worry:${{ github.sha }}`
+The included GitHub Actions workflow uses ACR admin credentials for a quick demo. It will build, tag and push the image to `${{ secrets.ACR_LOGIN_SERVER }}/tuition-no-worry:${{ github.sha }}`.
 
-this is only demo, for production switch to a Service Principal + OIDC for better security.
+If you want a secure production setup, use Service Principal + OIDC or a short-lived SAS token.
 
-### 6) Helm deploy
+### 7) Helm deploy
 
-Create a `values-ci.yaml` that points to the ACR image and references `tnw-database-url` as the database secret:
+Create `values-ci.yaml` with the ACR repository and tag. Example:
 
 ```yaml
 image:
@@ -149,29 +230,49 @@ Install/upgrade:
 helm upgrade --install tnw ./charts/tuition-no-worry -f values-ci.yaml
 ```
 
-### 7) Seed the DB
+### 8) Seed the DB
 
-run the chart's dbMigration job by setting `dbMigration.enableJob: true`.
+Option A — Local seeding (trusted runner):
+
+```bash
+export DATABASE_URL="$(cd ./tf-postgres && terraform output -raw postgresql_database_url)"
+node ./scripts/run-sql-seed.js ./sql/schema.sql
+node ./scripts/run-sql-seed.js ./sql/seed-full.sql
+```
+
+Option B — Chart `dbMigration` job:
+
+- Set `dbMigration.enableJob: true` in your values file and run `helm upgrade --install ... -f values.yaml`. This runs a Kubernetes Job inside the cluster to apply schema+seed (cluster must reach the Postgres server).
 
 ---
 
 ## Verification
 
-- CI run: ensure the GitHub Actions run shows build and push succeed.
-- ACR: confirm image exists via `az acr repository list --name <acr>`.
-- AKS: `kubectl get pods` — pods should come up; `kubectl logs` for troubleshooting.
-- DB: query tables to confirm seed applied.
+- CI: check GitHub Actions run logs for build and push success.
+- ACR: `az acr repository list --name <acr>`
+- AKS: `kubectl get pods --namespace default` and `kubectl logs <pod>` for troubleshooting.
+- DB: use `psql` or a GUI to verify tables and rows.
+
+If you see `password authentication failed for user 'tnw_user'` while seeding, verify the URL contents, and that you're using the admin password vs a custom DB user.
 
 ---
 
 ## Cleanup
 
-Destroy resources in each `tf-*` folder when finished:
+Destroy resources to avoid charges (reverse order):
 
 ```bash
-cd tf-acr && terraform destroy -auto-approve -var="resource_group_name=tnw-rg"
-cd tf-postgres && terraform destroy -auto-approve -var="resource_group_name=tnw-rg"
-cd tf-aks && terraform destroy -auto-approve -var="resource_group_name=tnw-rg"
+cd tf-acr && terraform destroy -auto-approve -var="resource_group_name=$MAIN_RG"
+cd tf-postgres && terraform destroy -auto-approve -var="resource_group_name=$MAIN_RG"
+cd tf-aks && terraform destroy -auto-approve -var="resource_group_name=$MAIN_RG"
+cd tf-aks-storage && terraform destroy -auto-approve -var="resource_group_name=$STORAGE_RG"
 ```
 
 ---
+
+## Security notes
+
+- Do NOT commit `.env` or any files containing secrets. Use `.env.example` for placeholders.
+- Prefer storing sensitive artifacts in Azure Key Vault. If you must use storage account keys, keep them in the dedicated storage RG and add them to CI secrets.
+- Use SP+OIDC for CI authentication instead of ACR admin credentials.
+
