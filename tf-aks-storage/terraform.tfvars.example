@@ -1,0 +1,3 @@
+resource_group_name = "tnw-aks-rg"
+location = "southeastasia"
+aks_cluster_name = "tnw-aks-cluster"

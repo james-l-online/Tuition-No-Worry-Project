@@ -1,0 +1,3 @@
+resource_group_name = "tnw-iam-rg"
+location = "location"
+acr_resource_id = "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.ContainerRegistry/registries/<acr-name>"
