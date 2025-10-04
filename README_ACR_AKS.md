@@ -151,15 +151,7 @@ helm upgrade --install tnw ./charts/tuition-no-worry -f values-ci.yaml
 
 ### 7) Seed the DB
 
-Option A: run the chart's dbMigration job by setting `dbMigration.enableJob: true`.
-
-Option B: run seeder from a trusted runner using Terraform output:
-
-```bash
-export DATABASE_URL="$(cd ../tf-postgres && terraform output -raw postgresql_database_url)"
-node ./scripts/run-sql-seed.js ./sql/schema.sql
-node ./scripts/run-sql-seed.js ./sql/seed-full.sql
-```
+run the chart's dbMigration job by setting `dbMigration.enableJob: true`.
 
 ---
 
