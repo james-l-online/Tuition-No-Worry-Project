@@ -127,7 +127,7 @@ Push to `starter` branch to trigger `.github/workflows/acr-admin-build-push.yml`
 - Login to ACR using admin credentials
 - Tag and push image to `${{ secrets.ACR_LOGIN_SERVER }}/tuition-no-worry:${{ github.sha }}`
 
-If you prefer not to use admin credentials for CI, switch to a Service Principal + OIDC (I can help scaffold that).
+this is only demo, for production switch to a Service Principal + OIDC for better security.
 
 ### 6) Helm deploy
 
