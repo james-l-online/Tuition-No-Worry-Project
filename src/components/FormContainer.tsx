@@ -19,9 +19,10 @@ export type FormContainerProps = {
   type: "create" | "update" | "delete";
   data?: any;
   id?: number | string;
+  triggerImage?: string;
 };
 
-const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
+const FormContainer = async ({ table, type, data, id, triggerImage }: FormContainerProps) => {
   let relatedData = {};
 
   const { userId, sessionClaims } = auth();
@@ -72,6 +73,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
         data={data}
         id={id}
         relatedData={relatedData}
+        triggerImage={triggerImage}
       />
     </div>
   );

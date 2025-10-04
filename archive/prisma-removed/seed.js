@@ -1,1 +1,0 @@
-/* Archived prisma/seed.js */

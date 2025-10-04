@@ -3,7 +3,7 @@ set -e
 
 echo "Waiting for postgres:5432 (TCP)…"
 RETRIES=60
-# Use netcat for a plain TCP wait; no SQL, no Prisma yet.
+# Use netcat for a plain TCP wait; no SQL, no DB runtime/ORM assumptions.
 until nc -z postgres 5432 >/dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
   echo "  not ready, retrying…"
   RETRIES=$((RETRIES-1))

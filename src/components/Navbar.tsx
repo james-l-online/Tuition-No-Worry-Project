@@ -4,6 +4,9 @@ import Image from "next/image";
 
 const Navbar = async () => {
   const user = await currentUser();
+  const displayName =
+    (user && (user.username || user.fullName || user.emailAddresses?.[0]?.emailAddress)) ||
+    "Guest";
   return (
     <div className="flex items-center justify-between p-4">
       {/* search removed (duplicate elsewhere) */}
@@ -19,7 +22,7 @@ const Navbar = async () => {
           </div>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs leading-3 font-medium">John Doe</span>
+          <span className="text-xs leading-3 font-medium">{displayName}</span>
           <span className="text-[10px] text-gray-500 text-right">
             {user?.publicMetadata?.role as string}
           </span>
