@@ -47,14 +47,12 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POS
 	}
 }
 ```
-
----
-
-## 2) Configure environment variables
-
 ## **Get Clerk API Keys**
 
 - In Clerk dashboard —> configure —> API keys —> Publishable Key / Secret Key.
+---
+
+## 2) Configure environment variables
 
 Create a **`.env`** at the repo root: (rename the provided .env.example to .env to use)
 
