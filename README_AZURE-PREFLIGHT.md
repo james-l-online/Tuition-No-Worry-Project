@@ -1,4 +1,5 @@
-# Azure Preflight Checklist
+# Azure Preflight Checklist 
+## (to be done before deploying with Terraform)
 
 This checklist gathers the commands, checks, and recommended values you should complete before running `terraform init/plan/apply` in the project's `tf-*` folders or deploying the Helm chart.
 
@@ -153,7 +154,7 @@ terraform apply -auto-approve \
   -var="resource_group_name=tnw-rg" \
   -var="server_name=tnw-pg-public-<unique>" \
   -var="public_access=true" \
-  -var='allowed_ip_ranges=["203.0.113.4/32"]'
+  -var='allowed_ip_ranges=["203.0.113.4/32"]'  # example range only
 ```
 
 After apply, read sensitive outputs:
