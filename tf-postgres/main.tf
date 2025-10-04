@@ -16,7 +16,6 @@ terraform {
 }
 
 provider "azurerm" {
-  features = {}
 }
 
 resource "random_password" "pg_admin" {
@@ -97,4 +96,11 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow" {
 resource "azurerm_postgresql_flexible_server_database" "appdb" {
   name      = "tnw_db"
   server_id = azurerm_postgresql_flexible_server.pg.id
+}
+
+// Optional data lookup for external storage account (tf-aks-storage)
+data "azurerm_storage_account" "tfstate" {
+  count               = var.storage_account_name != "" ? 1 : 0
+  name                = var.storage_account_name
+  resource_group_name = var.storage_account_rg
 }

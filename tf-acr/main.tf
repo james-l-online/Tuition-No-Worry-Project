@@ -59,6 +59,18 @@ output "acr_resource_id" {
   description = "ACR resource id for role assignments"
 }
 
+// Optional lookup for an external storage account used for Terraform backends
+data "azurerm_storage_account" "tfstate" {
+  count               = var.storage_account_name != "" ? 1 : 0
+  name                = var.storage_account_name
+  resource_group_name = var.storage_account_rg
+}
+
+output "storage_account_id" {
+  value       = length(data.azurerm_storage_account.tfstate) > 0 ? data.azurerm_storage_account.tfstate[0].id : ""
+  description = "If provided, the id of the external storage account used for backends"
+}
+
 output "acr_admin_username" {
   value       = azurerm_container_registry.acr.admin_username
   description = "ACR admin username (only present if admin_enabled = true)"

@@ -129,8 +129,31 @@ az group create --name "$STORAGE_RG" --location "$LOCATION"
 cd tf-aks-storage
 terraform init
 terraform apply -auto-approve -var="resource_group_name=$STORAGE_RG" -var="location=$LOCATION" -var="storage_account_name=tnwstate$(date +%s)"
-STORAGE_ACCOUNT=$(terraform output -raw storage_account_name)
-CONTAINER=$(terraform output -raw storage_container_name)
+# Capture outputs from tf-aks-storage so other modules can reference the same storage account
+STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+STORAGE_ACCOUNT_RG=$(terraform output -raw resource_group_name || echo "$STORAGE_RG")
+STORAGE_ACCOUNT_CONNSTR=$(terraform output -raw storage_account_primary_connection_string)
+
+# Example: pass the storage account info into other modules when running their 'terraform init/apply'
+# (do NOT commit backend secrets into VCS; use -backend-config or env vars locally)
+# cd ../tf-aks
+# terraform init
+# terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location=$LOCATION" \
+#   -var="storage_account_name=$STORAGE_ACCOUNT_NAME" -var="storage_account_rg=$STORAGE_ACCOUNT_RG"
+
+Note: it's best practice to configure the azurerm backend using `-backend-config` or a local `backend.tf` file
+that is not checked into source control. The storage account created by `tf-aks-storage` should be used for
+Terraform state across the other modules. Apply order recommendation:
+
+1. tf-aks-storage (create storage account and container for tfstate)
+2. tf-iam (create UAMI)
+3. tf-aks (create VNet, AKS) — pass storage_account_name/storage_account_rg and uami_id as needed
+4. tf-acr (create ACR)
+5. tf-iam (re-run with acr_resource_id to assign AcrPull to UAMI)
+6. tf-postgres (create private PostgreSQL and private endpoint)
+
+This ordering ensures the backend storage exists before other modules try to initialize and that role
+assignments can be created after ACR exists.
 ```
 
 Configure backend (example snippet) and re-run `terraform init` in other modules to use this backend.

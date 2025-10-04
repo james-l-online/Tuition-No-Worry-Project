@@ -1,4 +1,4 @@
-# tf-aks (AKS Demo Scaffold)
+# tf-aks (AKS Demo)
 
 This folder holds a commented, non-executable showcase of Terraform configurations for provisioning an Azure Kubernetes Service (AKS) cluster, networking, identity, and storage examples. All files are intentionally commented to avoid accidental execution. Use this README as a quick reference and copy the relevant blocks into a working folder when you're ready to run them.
 

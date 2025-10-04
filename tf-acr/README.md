@@ -1,6 +1,6 @@
 # tf-acr (Container Registry)
 
-This folder contains the Terraform manifest(s) for provisioning an Azure Container Registry (ACR) for the Tuition-No-Worry project. Files are intentionally kept here for review; the repository currently ignores this folder so it won't be tracked by default.
+This folder contains the Terraform manifest(s) for provisioning an Azure Container Registry (ACR) for the Tuition-No-Worry project. Files are intentionally kept here for review
 
 What is included (review-only):
 - `versions.tf` — provider and Terraform version constraints.

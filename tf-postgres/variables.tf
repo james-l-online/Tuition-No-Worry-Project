@@ -83,3 +83,15 @@ variable "k8s_secret_name" {
   type        = string
   default     = "tnw-database-url"
 }
+
+variable "storage_account_name" {
+  description = "Optional: name of the storage account used for Terraform backends"
+  type        = string
+  default     = ""
+}
+
+variable "storage_account_rg" {
+  description = "Optional: resource group of the storage account used for Terraform backends"
+  type        = string
+  default     = ""
+}
