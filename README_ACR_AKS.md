@@ -1,6 +1,15 @@
 # Tuition No Worry — Final Demo Guide 
 ## (ACR + AKS + Public Postgres + tfstate Storage)
-This consolidated guide shows how to provision Azure resources (AKS, ACR, PostgreSQL Flexible Server), push a container image, manage secrets, and deploy the app with Helm. It merges the quick-demo flow and the Azure preflight steps we need to achieve our demo.
+This consolidated guide is tailored for our capstone project, where the main objective is to simulate a real-world DevOps workflow for deploying microservices on Azure Kubernetes Service (AKS). The application used in this guide is a simple Next.js app, serving as a stand-in to represent a typical microservice workload. The primary focus is not on the app's business logic, but on demonstrating the end-to-end DevOps process: provisioning Azure resources (AKS, Azure Container Registry, PostgreSQL Flexible Server), building and pushing container images, managing secrets securely, and deploying to AKS using Helm.
+
+In this demo we:
+- Set up the necessary Azure infrastructure for a microservices deployment.
+- Use Terraform to automate resource provisioning and state management.
+- Build and push Docker images to Azure Container Registry.
+- Securely handle sensitive information such as database connection strings.
+- Deploy and manage application releases on AKS using Helm charts.
+
+This hands-on walkthrough merges the essential Azure preflight steps with a streamlined demo flow, providing a practical foundation for understanding DevOps practices in a cloud-native environment. The approach is designed to help you gain experience with the tools and processes used in modern DevOps pipelines, rather than focusing on the specifics of the application itself.
 
 Key points:
 - This demo uses a public PostgreSQL Flexible Server for convenience. Use private endpoints in production.
