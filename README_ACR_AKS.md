@@ -79,7 +79,7 @@ terraform apply -auto-approve \
   -var="resource_group_name=tnw-rg" \
   -var="server_name=tnw-pg-public-<unique>" \
   -var="public_access=true" \
-  -var='allowed_ip_ranges=["203.0.113.0/24"]'
+  -var='allowed_ip_ranges=["203.0.113.0/24"]'  #example range only
 ```
 
 After the apply run:
