@@ -177,12 +177,18 @@ Pass UAMI_ID into tf-aks so AKS is created with the user-assigned identity.
 
 ```bash
 cd ../tf-aks
+
+# Create the container (preferred if you have proper RBAC):
+az storage container create --name tfstate --account-name tnwstate1759641898 --auth-mode login
+
 terraform init \
   -backend-config="resource_group_name=tnw-storage-rg" \
   -backend-config="storage_account_name=<your-storage-acc-name>" \
   -backend-config="container_name=tfstate" \
   -backend-config="key=tf-aks.terraform.tfstate"
+
 terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location=$LOCATION" -var="uami_id=$UAMI_ID"
+
 # Capture outputs
 VNET_ID=$(terraform output -raw vnet_id)
 AKS_SUBNET_ID=$(terraform output -raw aks_subnet_id)
