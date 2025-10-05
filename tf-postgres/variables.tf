@@ -29,7 +29,7 @@ variable "postgres_version" {
 variable "sku_name" {
   description = "SKU name for the flexible server"
   type        = string
-  default     = "Standard_B1ms"
+  default     = "B_Standard_B2s"
 }
 
 variable "storage_mb" {
@@ -92,6 +92,12 @@ variable "storage_account_name" {
 
 variable "storage_account_rg" {
   description = "Optional: resource group of the storage account used for Terraform backends"
+  type        = string
+  default     = ""
+}
+
+variable "zone" {
+  description = "Optional availability zone for the Postgres server (e.g. \"1\"). Leave empty to omit."
   type        = string
   default     = ""
 }
