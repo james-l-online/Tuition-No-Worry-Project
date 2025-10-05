@@ -39,7 +39,6 @@ next-env.d.ts
 # Terraform (temporary - ignores, state, and local caches)
 # NOTE: .gitignore does not untrack files already committed. To remove tracked terraform files,
 # run: git rm --cached <path> or use the commands in the project README.
-*.tf
 *.tfvars
 *.tfstate
 *.tfstate.*
@@ -50,6 +49,11 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+# Ignore local terraform debug logs and module debug artifacts
+*tf-debug.log
+
+# Keep Terraform configs tracked, but ignore local overrides and workspace files
+!*.tf
 
 # Helm charts (ignore chart scaffolds and package archives)
 charts/
