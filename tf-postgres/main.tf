@@ -27,6 +27,8 @@ resource "azurerm_postgresql_flexible_server" "pg" {
   name                = var.server_name
   resource_group_name = var.resource_group_name
   location            = var.location
+  # set zone only when provided so we can match existing resources without forcing a change
+  zone                = var.zone != "" ? var.zone : null
 
   administrator_login    = var.administrator_login
   administrator_password = random_password.pg_admin.result
