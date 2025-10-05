@@ -128,6 +128,8 @@ LOCATION=eastasia
 az group create --name "$STORAGE_RG" --location "$LOCATION"
 cd tf-aks-storage
 terraform init
+# to ensure no ResourceManagerAccount - no subscriptionID issues
+export ARM_SUBSCRIPTION_ID="$SubscriptionId"
 terraform apply -auto-approve -var="resource_group_name=$STORAGE_RG" -var="location=$LOCATION" -var="storage_account_name=tnwstate$(date +%s)"
 # Capture outputs from tf-aks-storage so other modules can reference the same storage account
 STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
