@@ -1,3 +1,3 @@
 resource_group_name = "tnw-aks-rg"
-location = "southeastasia"
+location = "eastasia"
 aks_cluster_name = "tnw-aks-cluster"

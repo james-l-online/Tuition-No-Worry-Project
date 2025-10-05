@@ -1,10 +1,11 @@
 # Tuition No Worry — Final Demo Guide 
-This guide outlines our capstone project simulating a real-world DevOps workflow on Azure Kubernetes Service (AKS). Using a simple Next.js app as a proxy workload, it demonstrates end-to-end practices: provisioning resources, building and publishing images, secure secret management, and Helm-based deployment. Emphasis is placed on security through private PostgreSQL endpoints and Azure Managed Identity for credential-free image pulls.
 
+This guide outlines our capstone project simulating a real-world DevOps workflow on Azure Kubernetes Service (AKS). Using a simple Next.js app as a proxy workload, it demonstrates end-to-end practices: provisioning resources, building and publishing images, secure secret management, and Helm-based deployment. Emphasis is placed on security through private PostgreSQL endpoints and Azure Managed Identity for credential-free image pulls.
 
 This demo demonstrates a secure, automated microservices deployment on Azure: infrastructure provisioned with Terraform, images built and stored in ACR, secrets managed privately, and applications deployed to AKS with Helm using managed identities. The focus is on cloud-native DevOps practices rather than application logic.
 
 Key points:
+
 - This demo uses a **private PostgreSQL Flexible Server** with a private endpoint and Private DNS, ensuring the database is only accessible from within the AKS cluster's VNet. This simulates a production-grade, secure database setup.
 - **Managed identities** are used for AKS to pull images from ACR, eliminating the need for admin credentials and improving security by granting only the necessary permissions (AcrPull).
 - The `tf-aks-storage` module provisions a dedicated storage account in a separate resource group for Terraform state and sensitive artifacts, isolating secrets and state from the main application resources.
@@ -16,26 +17,30 @@ Key points:
 
 Build the Next.js image, push to ACR, deploy to AKS with Helm, and use a private PostgreSQL Flexible Server reachable only from the cluster VNet (private endpoint). Use a UAMI attached to AKS for ACR pull permissions. Use tf-aks-storage (separate RG) to host Terraform backend.
 
-
 ---
 
 ## Architecture (short)
-- App image → ACR
+
+- App Docker Container image → ACR
 - AKS in VNet (tf-aks)
 - Private PostgreSQL Flexible Server with private endpoint & Private DNS (tf-postgres)
 - User-assigned managed identity for AKS (tf-iam) granted AcrPull on ACR
 - Storage account in separate RG for tfstate (tf-aks-storage)
+- Provisioning via Terraform: tf-acr, tf-aks, tf-aks-storage, tf-postgres, tf-iam
 - Deployment via Helm: charts/tuition-no-worry
+
 ---
 
 ## Files / Terraform layout
+
 - `tf-aks/` — VNet, Subnets, AKS cluster
 - `tf-acr/` — ACR, (admin enabled for demo)
 - `tf-postgres/` — PostgreSQL Flexible Server (public_access toggle + allowed_ip_ranges)
 - `tf-aks-storage/` — Storage account + container for Terraform state and secret artifacts. Deploys into a separate resource group (e.g. `tnw-storage-rg`).
-- `tf-iam/` — Optional user-assigned managed identity and role assignment (AcrPull for AKS)
+- `tf-iam/` — user-assigned managed identity and role assignment (AcrPull for AKS)
 
 App & deploy artifacts
+
 - `Dockerfile`, `docker/entrypoint.sh`
 - `sql/schema.sql`, `sql/seed-full.sql`
 - `scripts/run-sql-seed.js`
@@ -105,8 +110,6 @@ az group create --name "$STORAGE_RG" --location "$LOCATION"
 az vm list-usage --location "$LOCATION" -o table
 ```
 
-
-
 ## Quick-demo flow
 
 Follow this order to provision resources and deploy the app.
@@ -114,6 +117,7 @@ Follow this order to provision resources and deploy the app.
 ## Steps (detailed)
 
 ### 1) tf-aks-storage (tfstate + storage RG)
+
 ```bash
 STORAGE_RG=tnw-storage-rg
 LOCATION=eastasia
@@ -152,6 +156,7 @@ assignments can be created after ACR exists.
 Configure backend (example snippet) and re-run `terraform init` in other modules to use this backend.
 
 ### 2) Create the user-assigned managed identity (UAMI)
+
 ```bash
 MAIN_RG=tnw-rg
 LOCATION=eastasia
@@ -165,7 +170,9 @@ UAMI_PRINCIPAL_ID=$(terraform output -raw uami_principal_id)
 ```
 
 ### 3) Create AKS and attach the UAMI (tf-aks)
+## User-Assigned Managed Identity
 Pass UAMI_ID into tf-aks so AKS is created with the user-assigned identity.
+
 ```bash
 cd ../tf-aks
 terraform init
@@ -176,10 +183,12 @@ AKS_SUBNET_ID=$(terraform output -raw aks_subnet_id)
 ```
 
 Notes:
+
 - AKS is created with a user-assigned identity attached; this UAMI will be used to pull from ACR.
 - Ensure AKS has system-managed identity enabled if you need it; current setup attaches UAMI for image pull.
 
 ### 4) Create ACR (tf-acr)
+
 ```bash
 ACR_NAME=tnwregistry$RANDOM # ensure registry name is globally unique
 cd ../tf-acr
@@ -190,18 +199,22 @@ ACR_LOGIN=$(terraform output -raw acr_login_server)
 ```
 
 ### 5) Grant AcrPull to the UAMI (re-run tf-iam or use dedicated role assignment)
+
 Run tf-iam again (it will create the role assignment if `acr_resource_id` is provided):
+
 ```bash
 cd ../tf-iam
 terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location=$LOCATION" -var="identity_name=$IDENTITY_NAME" -var="acr_resource_id=$ACR_ID"
 ```
 
 Verify role assignment:
+
 ```bash
 az role assignment list --assignee "$UAMI_PRINCIPAL_ID" --scope "$ACR_ID" -o table
 ```
 
 ### 6) Provision PostgreSQL Flexible Server with private endpoint (tf-postgres)
+
 Ensure you pass the AKS VNet ID and a subnet for the private endpoint (pe_subnet_id). Use the VNet created by tf-aks or a peered VNet.
 
 ```bash
@@ -218,15 +231,18 @@ terraform apply -auto-approve \
 ```
 
 Capture DB output:
+
 ```bash
 DB_URL=$(terraform output -raw postgresql_database_url)
 ```
 
 Notes:
+
 - The module creates a Private Endpoint and a Private DNS zone (privatelink.postgres.database.azure.com) linked to the AKS VNet so pods will resolve the DB FQDN to the private IP.
 - If you want Terraform to create the k8s secret automatically, rerun with `-var="create_k8s_secret=true"` and ensure kubeconfig points to the AKS cluster.
 
 ### 7) Create Kubernetes secret (manual, recommended)
+
 Run this from a machine that has kubeconfig for the AKS cluster (or use a pod/jumpbox in the VNet):
 
 ```bash
@@ -234,8 +250,10 @@ kubectl create secret generic tnw-database-url --from-literal=DATABASE_URL="$DB_
 ```
 
 ### 8) CI build/push & deploy
+
 - CI should build the Docker image and push to ACR. Prefer SP+OIDC; for quick demo you can use ACR admin creds (less secure).
 - Example Helm values (values-ci.yaml):
+
 ```yaml
 image:
   repository: "<YOUR_ACR_LOGIN_SERVER>/tuition-no-worry"
@@ -247,6 +265,7 @@ dbMigration:
 ```
 
 Deploy:
+
 ```bash
 helm upgrade --install tnw ./charts/tuition-no-worry -f values-ci.yaml
 ```
@@ -254,11 +273,13 @@ helm upgrade --install tnw ./charts/tuition-no-worry -f values-ci.yaml
 If `dbMigration.enableJob: true`, the Job runs inside the cluster and will reach the private Postgres endpoint.
 
 ## Verification
+
 - Confirm UAMI role assignment and ACR access.
 - Pod image pulls: check `kubectl describe pod <pod>` and `kubectl logs`.
 - DNS inside cluster resolves the Postgres FQDN to a private IP (run a debug pod and `nslookup <pg-fqdn>`).
 
 ## Cleanup (reverse order)
+
 ```bash
 cd tf-acr && terraform destroy -auto-approve -var="resource_group_name=$MAIN_RG"
 cd tf-postgres && terraform destroy -auto-approve -var="resource_group_name=$MAIN_RG"
@@ -268,9 +289,9 @@ cd tf-iam && terraform destroy -auto-approve -var="resource_group_name=$MAIN_RG"
 ```
 
 ## Security notes
+
 - Create UAMI first and attach to AKS for least-privilege pulls.
 - Create ACR before role assignment step so the AcrPull role can be granted.
 - Private endpoint isolates DB from internet; seed & admin operations must run inside VNet or via trusted jumpbox.
 - Use UAMI for least-privilege image pulls. For production CI, use OIDC/SP to obtain tokens (no long-lived secrets).
 - Store secrets in Key Vault where possible. Use tf-aks-storage only for tfstate and artifacts, not for long-term secret storage unless keys are protected.
-
