@@ -163,15 +163,12 @@ Configure backend (example snippet) and re-run `terraform init` in other modules
 ### 2) Create the user-assigned managed identity (UAMI)
 
 ```bash
-MAIN_RG=tnw-rg
-LOCATION=eastasia
-IDENTITY_NAME=tnw-uami
-
+# create the UAMI
 cd ../tf-iam
 terraform init
-terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location=$LOCATION" -var="identity_name=$IDENTITY_NAME"
-UAMI_ID=$(terraform output -raw uami_id)
-UAMI_PRINCIPAL_ID=$(terraform output -raw uami_principal_id)
+terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location=$LOCATION"
+$UAMI_ID = terraform output -raw uami_id
+$UAMI_PRINCIPAL_ID = terraform output -raw uami_principal_id
 ```
 
 ### 3) Create AKS and attach the UAMI (tf-aks)
