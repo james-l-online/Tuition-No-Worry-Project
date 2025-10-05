@@ -1,19 +1,4 @@
 output "uami_id" {
-  value = azurerm_user_assigned_identity.uami.id
-}
-
-output "uami_client_id" {
-  value = azurerm_user_assigned_identity.uami.client_id
-}
-
-output "uami_principal_id" {
-  value = azurerm_user_assigned_identity.uami.principal_id
-}
-
-output "acr_role_assignment_id" {
-  value = length(azurerm_role_assignment.acr_pull) > 0 ? azurerm_role_assignment.acr_pull[0].id : ""
-}
-output "uami_id" {
   value       = azurerm_user_assigned_identity.uami.id
   description = "The resource id of the created user-assigned managed identity"
 }

@@ -1,22 +1,21 @@
 // Minimal backend placeholder for tf-aks.
-// Fill backend configuration by passing -backend-config flags during 'terraform init' or
-// by copying backend.tf.example to backend.tf and populating values locally.
-
+// To allow non-interactive `terraform init -backend-config=...`, keep the backend type declared
+// but supply the concrete values via -backend-config or a local, uncommitted backend.tf.
 terraform {
-  backend "azurerm" {}
-}
-// Commented Terraform backend example for tf-aks (Azure Storage)
-// Documentation-only example. Configure storage account and container before use.
-
-/*
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "<state-rg>"
-    storage_account_name = "<stateacct>"
-    container_name       = "tfstate"
-    key                  = "tf-aks.terraform.tfstate"
-  }
+	backend "azurerm" {}
 }
 
-# For locking: using the azurerm backend automatically obtains blob leases. Ensure contributors have appropriate RBAC.
-*/
+// Documentation-only example (do NOT commit secrets):
+// terraform {
+//   backend "azurerm" {
+//     resource_group_name  = "tnw-storage-rg"
+//     storage_account_name = "tnwstate12345"
+//     container_name       = "tfstate"
+//     key                  = "tf-aks.terraform.tfstate"
+//   }
+// }
+
+// Example init (replace values with tf-aks-storage outputs):
+// terraform init -backend-config="resource_group_name=tnw-storage-rg" -backend-config="storage_account_name=tnwstate12345" -backend-config="container_name=tfstate" -backend-config="key=tf-aks.terraform.tfstate"
+
+

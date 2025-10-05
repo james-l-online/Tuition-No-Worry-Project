@@ -1,23 +1,4 @@
-terraform {
-  required_providers {
-    azurerm = { source = "hashicorp/azurerm" }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-variable "resource_group_name" { type = string }
-variable "location" {
-  type    = string
-  default = "eastasia"
-}
-
-variable "aks_cluster_name" {
-  type    = string
-  default = "tnw-aks"
-}
+// ...existing code...
 
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
@@ -47,7 +28,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   default_node_pool {
     name       = "agentpool"
-    vm_size    = "Standard_DS2_v2"
+    vm_size    = "standard_a2_v2"
     node_count = 2
     vnet_subnet_id = azurerm_subnet.aks.id
   }
@@ -58,6 +39,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   network_profile {
     network_plugin = "azure"
+
+    # service_cidr must not overlap any VNet/subnet
+    service_cidr   = "10.2.0.0/16"
+    dns_service_ip = "10.2.0.10"
   }
 }
 
