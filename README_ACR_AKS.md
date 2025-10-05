@@ -72,8 +72,11 @@ az account set --subscription "<YOUR_SUBSCRIPTION_ID_OR_NAME>"
 3. Optional: Create an automation Service Principal (for CI)
 
 ```bash
-az ad sp create-for-rbac --name "tnw-sp" --role Contributor --sdk-auth > tnw-sp.json
-# Save tnw-sp.json securely and add its values to CI secrets (or use OIDC recommended flow)
+az ad sp create-for-rbac \
+  --name "tnw-sp" \
+  --role Contributor \
+  --scopes /subscriptions/<SUBSCRIPTION_ID> \
+  --json-auth > tnw-sp.json
 ```
 
 4. Register resource providers (run once per subscription)
