@@ -15,8 +15,7 @@ terraform {
   }
 }
 
-provider "azurerm" {
-}
+// Provider config moved to provider.tf (includes required features {}).
 
 resource "random_password" "pg_admin" {
   length  = 20
