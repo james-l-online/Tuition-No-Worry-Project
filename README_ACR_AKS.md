@@ -206,9 +206,15 @@ Notes:
 ### 4) Create ACR (tf-acr)
 
 ```bash
-ACR_NAME=tnwregistry$RANDOM # ensure registry name is globally unique
+ACR_NAME=tnwregistry$RANDOM     # ensure registry name is unique
 cd ../tf-acr
-terraform init
+
+terraform init \
+  -backend-config="resource_group_name=tnw-storage-rg" \
+  -backend-config="storage_account_name=<THE_STATE_ACCOUNT_NAME>" \
+  -backend-config="container_name=tfstate" \
+  -backend-config="key=tf-acr.terraform.tfstate"
+
 terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="acr_name=$ACR_NAME" -var="location=$LOCATION"
 ACR_ID=$(terraform output -raw acr_resource_id)
 ACR_LOGIN=$(terraform output -raw acr_login_server)
