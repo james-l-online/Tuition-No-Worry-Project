@@ -1,3 +1,39 @@
+resource "azurerm_user_assigned_identity" "uami" {
+  name                = var.identity_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+}
+
+# Optional AcrPull role assignment (created only when acr_resource_id is provided)
+resource "azurerm_role_assignment" "acr_pull" {
+  count                = var.acr_resource_id != "" ? 1 : 0
+  scope                = var.acr_resource_id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.uami.principal_id
+}
+terraform {
+  required_providers {
+    azurerm = { source = "hashicorp/azurerm" }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_user_assigned_identity" "uami" {
+  name                = var.identity_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+}
+
+# Optional AcrPull role assignment (created only when acr_resource_id is provided)
+resource "azurerm_role_assignment" "acr_pull" {
+  count               = var.acr_resource_id != "" ? 1 : 0
+  scope               = var.acr_resource_id
+  role_definition_name = "AcrPull"
+  principal_id        = azurerm_user_assigned_identity.uami.principal_id
+}
 terraform {
   required_providers {
     azurerm = { source = "hashicorp/azurerm" }
@@ -17,25 +53,24 @@ variable "location" {
   default = "eastasia"
 }
 
-variable "storage_account_name" {
+variable "acr_resource_id" {
   type = string
 }
 
-resource "azurerm_storage_account" "sa" {
-  name                     = var.storage_account_name
-  resource_group_name      = var.resource_group_name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  min_tls_version          = "TLS1_2"
+resource "azurerm_user_assigned_identity" "aks_uami" {
+  name                = "tnw-aks-uami"
+  resource_group_name = var.resource_group_name
+  location            = var.location
 }
 
-output "storage_account_id" {
-  value = azurerm_storage_account.sa.id
+# Role assignment for ACR pull to the UAMI
+resource "azurerm_role_assignment" "acr_pull_uami" {
+  scope                = var.acr_resource_id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.aks_uami.principal_id
 }
 
-output "storage_account_primary_connection_string" {
-  value     = azurerm_storage_account.sa.primary_connection_string
-  sensitive = true
+output "uami_client_id" {
+  value = azurerm_user_assigned_identity.aks_uami.client_id
 }
 
