@@ -2,7 +2,7 @@
 
 This guide outlines our capstone project simulating a real-world DevOps workflow on Azure Kubernetes Service (AKS). Using a simple Next.js app as a proxy workload, it demonstrates end-to-end practices: provisioning resources, building and publishing images, secure secret management, and Helm-based deployment. Emphasis is placed on security through private PostgreSQL endpoints and Azure Managed Identity for credential-free image pulls.
 
-This demo demonstrates a secure, automated microservices deployment on Azure: infrastructure provisioned with Terraform, images built and stored in ACR, secrets managed privately, and applications deployed to AKS with Helm using managed identities. The focus is on cloud-native DevOps practices rather than application logic.
+This demo demonstrates a secure, automated app (to represent microservices for demo) deployment on Azure: infrastructure provisioned with Terraform, images built and stored in ACR, secrets managed privately, and applications deployed to AKS with Helm using managed identities. The focus is on cloud-native DevOps practices rather than application logic.
 
 Key points:
 
