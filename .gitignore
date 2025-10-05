@@ -49,6 +49,8 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+.terraform
+.terraform.lock.hcl
 # Ignore local terraform debug logs and module debug artifacts
 *tf-debug.log
 
@@ -59,3 +61,6 @@ override.tf.json
 charts/
 *.tgz
 charts/*.tgz
+
+# JSON files
+*.jsonz
