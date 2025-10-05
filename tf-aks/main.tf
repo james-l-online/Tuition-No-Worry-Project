@@ -1,23 +1,4 @@
-terraform {
-  required_providers {
-    azurerm = { source = "hashicorp/azurerm" }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-variable "resource_group_name" { type = string }
-variable "location" {
-  type    = string
-  default = "eastasia"
-}
-
-variable "aks_cluster_name" {
-  type    = string
-  default = "tnw-aks"
-}
+// ...existing code...
 
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
