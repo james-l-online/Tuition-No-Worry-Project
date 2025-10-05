@@ -46,6 +46,18 @@ COPY --chown=node:node docker/entrypoint.sh /entrypoint.sh
 # Fix potential Windows line endings issue and ensure script is executable
 RUN sed -i "s/\r$//" /entrypoint.sh && chmod +x /entrypoint.sh
 
+# Image metadata (semantic labels)
+LABEL org.opencontainers.image.title="Tuition No Worry"
+LABEL org.opencontainers.image.description="Tuition No Worry Next.js application"
+LABEL org.opencontainers.image.authors="Tuition No Worry Team"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Lightweight HTTP healthcheck using Node (no additional binaries required).
+# It probes the app root on PORT (defaults to 3000) and succeeds for 2xx/3xx responses.
+# Runs as the image's runtime user; keep the command as a JSON array to avoid shell parsing issues.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+	CMD ["node","-e","const http=require('http');const port=(process.env.PORT||3000);const req=http.get({host:'127.0.0.1',port:port,path:'/'},res=>{if(res.statusCode>=200&&res.statusCode<400)process.exit(0);else process.exit(1)});req.on('error',()=>process.exit(1));"]
+
 # non-root user for security (use existing node user)
 USER node
 ENTRYPOINT ["sh", "/entrypoint.sh"]
