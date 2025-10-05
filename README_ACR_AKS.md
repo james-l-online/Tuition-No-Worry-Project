@@ -215,6 +215,10 @@ terraform init \
   -backend-config="container_name=tfstate" \
   -backend-config="key=tf-acr.terraform.tfstate"
 
+terraform import \
+  -var="resource_group_name=$MAIN_RG" \
+  azurerm_resource_group.rg /subscriptions/<$SUBSCRIPTION_ID>/resourceGroups/$MAIN_RG
+
 terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="acr_name=$ACR_NAME" -var="location=$LOCATION"
 ACR_ID=$(terraform output -raw acr_resource_id)
 ACR_LOGIN=$(terraform output -raw acr_login_server)
