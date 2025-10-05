@@ -79,7 +79,8 @@ resource "azurerm_private_dns_a_record" "pg_a" {
   zone_name           = azurerm_private_dns_zone.pg_dns[0].name
   resource_group_name = var.resource_group_name
   ttl                 = 300
-  records             = [for c in azurerm_private_endpoint.pg_pe[0].private_service_connection : c.private_ip_address][0]
+  # private_service_connection is a list of objects; ensure 'records' is a list of strings
+  records             = [for c in azurerm_private_endpoint.pg_pe[0].private_service_connection : c.private_ip_address]
 }
 
 // If using public access, create optional firewall rules for allowed IP ranges
