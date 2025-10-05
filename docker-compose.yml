@@ -39,7 +39,7 @@ services:
       CHOWN_ON_STARTUP: "false"
       # Seeds: set SQL_SEED_ON_START to true to run /app/sql/seed-full.sql via the node runner.
       SQL_SEED_ON_START: "true"         # set "true" to run /app/sql/seed-full.sql via node runner at startup
-      # Legacy Prisma flags removed. For an interactive DB UI, run your preferred tool separately.
+    
     ports:
       - "3000:3000"
     restart: unless-stopped

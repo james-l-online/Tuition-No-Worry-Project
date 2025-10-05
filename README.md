@@ -149,13 +149,12 @@ SQL_SEED_ON_START=true
 When enabled the container entrypoint will run `/app/scripts/run-sql-seed.js /app/sql/seed-full.sql` after the
 DB becomes available. You can also run it manually from your host (requires `psql` or the node runner):
 
-PowerShell:
+```bash
+export DATABASE_URL='postgresql://tnw_user:tnw_pass@127.0.0.1:5432/tuition_dev?schema=public&sslmode=disable'
+node scripts/run-sql-seed.js sql/seed-full.sql
 
-```powershell
-# $env:DATABASE_URL = 'postgresql://tnw_user:tnw_pass@127.0.0.1:5432/tuition_dev?schema=public&sslmode=disable'
-# node scripts/run-sql-seed.js sql/seed-full.sql
-# or using psql (if psql is installed):
-# psql "$env:DATABASE_URL" -f sql/seed-full.sql
+# Or using psql (if installed)
+psql "$DATABASE_URL" -f sql/seed-full.sql
 ```
 
 ## 
