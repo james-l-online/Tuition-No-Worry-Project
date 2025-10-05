@@ -23,3 +23,9 @@ variable "aks_cluster_name" {
   type    = string
   default = "tnw-aks"
 }
+
+variable "uami_id" {
+  description = "Optional: user-assigned managed identity resource id to attach to AKS (pass from tf-iam output uami_id)."
+  type        = string
+  default     = ""
+}
