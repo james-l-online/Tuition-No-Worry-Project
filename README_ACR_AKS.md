@@ -236,6 +236,8 @@ terraform apply -auto-approve -var="resource_group_name=$MAIN_RG" -var="location
 Verify role assignment:
 
 ```bash
+# using the output for uami_principal_id
+UAMI_PRINCIPAL_ID="<uami-princpal-id from output>"
 az role assignment list --assignee "$UAMI_PRINCIPAL_ID" --scope "$ACR_ID" -o table
 ```
 
