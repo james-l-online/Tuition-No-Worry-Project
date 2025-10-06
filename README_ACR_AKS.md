@@ -100,13 +100,6 @@ STORAGE_RG=tnw-storage-rg
 LOCATION=eastasia
 ```
 
-Create resource groups (optional — Terraform modules can create them too):
-
-```bash
-az group create --name "$MAIN_RG" --location "$LOCATION"
-az group create --name "$STORAGE_RG" --location "$LOCATION"
-```
-
 6. Quotas: verify vCPU and SKU availability in `eastasia`
 
 ```bash
