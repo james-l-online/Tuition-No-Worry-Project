@@ -136,12 +136,12 @@ STORAGE_ACCOUNT_CONNSTR=$(terraform output -raw storage_account_primary_connecti
 Note: The storage account created by `tf-aks-storage` should be used for
 Terraform state across the other modules. Apply order recommendation:
 
-1. tf-aks-storage (create storage account and container for tfstate)
-2. tf-iam (create UAMI)
-3. tf-aks (create VNet, AKS) — pass storage_account_name/storage_account_rg and uami_id as needed
-4. tf-acr (create ACR)
-5. tf-iam (re-run with acr_resource_id to assign AcrPull to UAMI)
-6. tf-postgres (create private PostgreSQL and private endpoint)
+1. `tf-aks-storage` (create storage account and container for tfstate)
+2. `tf-iam` (create UAMI)
+3. `tf-aks` (create VNet, AKS) — pass storage_account_name/storage_account_rg and uami_id as needed
+4. `tf-acr` (create ACR)
+5. `tf-iam` (re-run with acr_resource_id to assign AcrPull to UAMI)
+6. `tf-postgres` (create private PostgreSQL and private endpoint)
 
 This ordering ensures the backend storage exists before other modules try to initialize and that role
 assignments can be created after ACR exists.
