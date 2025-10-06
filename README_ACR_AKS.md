@@ -132,7 +132,7 @@ terraform apply -auto-approve -var="resource_group_name=$STORAGE_RG" -var="locat
 STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
 STORAGE_ACCOUNT_RG=$(terraform output -raw resource_group_name || echo "$STORAGE_RG")
 STORAGE_ACCOUNT_CONNSTR=$(terraform output -raw storage_account_primary_connection_string)
-
+```
 Note: The storage account created by `tf-aks-storage` should be used for
 Terraform state across the other modules. Apply order recommendation:
 
@@ -145,7 +145,7 @@ Terraform state across the other modules. Apply order recommendation:
 
 This ordering ensures the backend storage exists before other modules try to initialize and that role
 assignments can be created after ACR exists.
-```
+
 
 Configure backend (example snippet) and re-run `terraform init` in other modules to use this backend.
 
