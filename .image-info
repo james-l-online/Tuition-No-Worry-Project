@@ -1,2 +1,2 @@
-IMAGE_REPOSITORY=tnwregistry0folki.azurecr.io/tuition-no-worry
-IMAGE_TAG=bdfcc5a
+IMAGE_REPOSITORY=<your-azure-repo>.azurecr.io/tuition-no-worry
+IMAGE_TAG=<image-tag-info>
