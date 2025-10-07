@@ -1,3 +1,6 @@
+resource_group_name = "tnw-storage-rg"
+location = "eastus"
+storage_account_name = "tnwstateexample"
 resource_group_name = "tnw-aks-rg"
 location = "eastasia"
 aks_cluster_name = "tnw-aks-cluster"

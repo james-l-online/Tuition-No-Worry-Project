@@ -1,0 +1,5 @@
+resource_group_name = "tnw-rg"
+location = "eastus"
+identity_name = "tnw-uami"
+# Optional: acr resource id to create role assignment
+acr_resource_id = ""

@@ -151,6 +151,14 @@ Terraform state across the other modules. Apply order recommendation:
 
 This ordering ensures the backend storage exists before other modules try to initialize and that role
 assignments can be created after ACR exists.
+
+Backend setup checklist (safe onboarding)
+
+- Copy `tf-aks/backend.tf.example` (or module-specific `backend.tf.example`) to `backend.tf` locally and fill values.
+- OR use `terraform init -backend-config=key=value` or `-backend-config=./backend.tfvars` to pass backend values without writing a file.
+- Do NOT commit `backend.tf` or any file containing backend secrets. Add a local `backend.tf` to `.gitignore` if desired.
+- After backend is configured, run `terraform init` in each module before `terraform apply`.
+- If you create the backend from `tf-aks-storage`, export the storage account name and resource group and then use them when initializing other modules (see example flow above).
 ```
 
 Configure backend (example snippet) and re-run `terraform init` in other modules to use this backend.

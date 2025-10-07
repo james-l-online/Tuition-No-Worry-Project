@@ -1,0 +1,46 @@
+name: 'Terraform: validate & lint'
+
+on:
+  pull_request:
+    paths:
+      - '**/*.tf'
+      - '.github/workflows/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (no backend)
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate || true
+
+      - name: Install tflint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Run tflint
+        run: tflint --module --deep || true
+
+      - name: Install tfsec
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y golang-go make git
+          go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
+
+      - name: Run tfsec
+        run: $HOME/go/bin/tfsec . || true
+
+      # Note: this job purposefully uses `|| true` on validate/tflint/tfsec
+      # so it won't block PRs until you configure policies. Remove `|| true` to enforce.

@@ -1,0 +1,4 @@
+resource_group_name = "tnw-rg"
+location = "eastus"
+acr_name = "tnwregistryexample"
+sku = "Standard"

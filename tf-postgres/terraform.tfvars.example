@@ -1,0 +1,17 @@
+resource_group_name = "tnw-rg"
+location = "eastus"
+server_name = "tnw-pg-example"
+public_access = false
+vnet_id = ""
+pe_subnet_id = ""
+create_k8s_secret = false
+resource_group_name = "tnw-rg"
+location = "eastus"
+server_name = "tnw-pg-example"
+public_access = false
+vnet_id = ""
+pe_subnet_id = ""
+create_k8s_secret = false
+# Optional: provide namespace/name for the created k8s secret
+k8s_namespace = "default"
+k8s_secret_name = "tnw-database-url"

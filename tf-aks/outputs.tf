@@ -25,3 +25,14 @@ output "storage_account_id" {
   value       = length(data.azurerm_storage_account.tfstate) > 0 ? data.azurerm_storage_account.tfstate[0].id : ""
   description = "The storage account id if the storage account lookup succeeded"
 }
+
+// Expose the VNet and AKS subnet IDs so other scripts and modules can reference them
+output "vnet_id" {
+  value       = azurerm_virtual_network.vnet.id
+  description = "The ID of the virtual network created for AKS"
+}
+
+output "aks_subnet_id" {
+  value       = azurerm_subnet.aks.id
+  description = "The ID of the subnet used by AKS"
+}

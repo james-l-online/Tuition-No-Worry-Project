@@ -1,0 +1,13 @@
+param(
+  [string]$Module = "tf-aks"
+)
+
+Push-Location $Module
+try {
+  $VNET_ID = (terraform output -raw vnet_id).Trim()
+  $AKS_SUBNET_ID = (terraform output -raw aks_subnet_id).Trim()
+  Write-Host "VNET_ID='$VNET_ID'"
+  Write-Host "AKS_SUBNET_ID='$AKS_SUBNET_ID'"
+} finally {
+  Pop-Location
+}

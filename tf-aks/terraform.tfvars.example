@@ -1,0 +1,16 @@
+resource_group_name = "tnw-rg"
+location = "eastus"
+aks_cluster_name = "tnw-aks"
+# Optional: uami id from tf-iam
+uami_id = ""
+# Backend storage (if using tf-aks-storage for state)
+storage_account_name = ""
+storage_account_rg = ""
+resource_group_name = "tnw-rg"
+location = "eastus"
+aks_cluster_name = "tnw-aks"
+# Optional: if using tf-aks-storage as backend, set storage account details
+storage_account_name = ""
+storage_account_rg = ""
+# Optional: pass user-assigned managed identity id created by tf-iam
+uami_id = ""

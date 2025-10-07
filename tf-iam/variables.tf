@@ -6,7 +6,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure location / region"
   type        = string
-  default     = "eastasia"
+  default     = "eastus"
 }
 
 variable "identity_name" {

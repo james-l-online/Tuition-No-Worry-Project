@@ -14,7 +14,7 @@ variable "resource_group_name" {
 
 variable "location" {
   type    = string
-  default = "eastasia"
+  default = "eastus"
 }
 
 variable "storage_account_name" {

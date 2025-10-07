@@ -10,7 +10,7 @@ variable "acr_name" {
 
 variable "location" {
   type    = string
-  default = "eastasia"
+  default = "eastus"
 }
 
 variable "storage_account_name" {
@@ -21,17 +21,6 @@ variable "storage_account_name" {
 
 variable "storage_account_rg" {
   description = "Resource group for external storage account used by backends"
-  type        = string
-  default     = ""
-}
-variable "storage_account_name" {
-  description = "Optional: name of the storage account used for Terraform backends (provisioned in tf-aks-storage)"
-  type        = string
-  default     = ""
-}
-
-variable "storage_account_rg" {
-  description = "Optional: resource group of the storage account used for Terraform backends"
   type        = string
   default     = ""
 }
