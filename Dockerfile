@@ -17,7 +17,6 @@ COPY public ./public
 COPY sql ./sql
 COPY scripts ./scripts
 COPY next.config.mjs tsconfig.json postcss.config.mjs tailwind.config.ts package*.json ./
-COPY next-env.d.ts .env.example README.md .pre-commit-config.yaml docker ./
 # Generate artifacts needed for the build. If you depend on local-only build-time tools, run them locally before building the image.
 # Build Next.js app
 RUN npm run build
