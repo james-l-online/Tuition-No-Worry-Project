@@ -47,7 +47,12 @@ const FormContainer = async ({ table, type, data, id, triggerImage }: FormContai
       case "student":
         const sgRes = await db.query(`SELECT id, level FROM grade ORDER BY level`)
         const scRes = await db.query(`SELECT c.*, (SELECT COUNT(*) FROM student s WHERE s.class_id = c.id) as students_count FROM class c ORDER BY c.name`)
-        relatedData = { classes: scRes.rows, grades: sgRes.rows };
+        // Normalize the rows so the frontend code can rely on Prisma-like shape: _count: { students }
+        const classes = scRes.rows.map((r: any) => ({
+          ...r,
+          _count: { students: Number(r.students_count ?? 0) },
+        }));
+        relatedData = { classes, grades: sgRes.rows };
         break;
       case "exam":
         let examSql = `SELECT id, name FROM lesson`

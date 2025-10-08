@@ -67,7 +67,7 @@ const StudentForm = ({
     }
   }, [state, router, type, setOpen]);
 
-  const { grades, classes } = relatedData;
+  const { grades = [], classes = [] } = relatedData ?? {};
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -162,7 +162,7 @@ const StudentForm = ({
         <InputField
           label="Birthday"
           name="birthday"
-          defaultValue={data?.birthday.toISOString().split("T")[0]}
+          defaultValue={data?.birthday ? new Date(data.birthday).toISOString().split("T")[0] : undefined}
           register={register}
           error={errors.birthday}
           type="date"
