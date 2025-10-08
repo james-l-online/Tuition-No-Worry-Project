@@ -11,13 +11,13 @@ variable "_dummy" {
 
 // Data source lookup (only if storage_account_name is provided)
 data "azurerm_storage_account" "tfstate" {
-  count                = var.storage_account_name != "" ? 1 : 0
-  name                 = var.storage_account_name
-  resource_group_name  = var.storage_account_rg
+  count               = var.storage_account_name != "" ? 1 : 0
+  name                = var.storage_account_name
+  resource_group_name = var.storage_account_rg
 }
 
 output "storage_account_name" {
-  value = var.storage_account_name
+  value       = var.storage_account_name
   description = "The storage account name to use for Terraform backends (set when using external tfstate storage)"
 }
 
