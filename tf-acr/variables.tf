@@ -24,6 +24,7 @@ variable "storage_account_rg" {
   type        = string
   default     = ""
 }
+// Optional storage account lookup used when backends are provisioned in a separate module
 variable "storage_account_name" {
   description = "Optional: name of the storage account used for Terraform backends (provisioned in tf-aks-storage)"
   type        = string
