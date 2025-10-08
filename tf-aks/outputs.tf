@@ -11,17 +11,27 @@ variable "_dummy" {
 
 // Data source lookup (only if storage_account_name is provided)
 data "azurerm_storage_account" "tfstate" {
-  count                = var.storage_account_name != "" ? 1 : 0
-  name                 = var.storage_account_name
-  resource_group_name  = var.storage_account_rg
+  count               = var.storage_account_name != "" ? 1 : 0
+  name                = var.storage_account_name
+  resource_group_name = var.storage_account_rg
 }
 
 output "storage_account_name" {
-  value = var.storage_account_name
+  value       = var.storage_account_name
   description = "The storage account name to use for Terraform backends (set when using external tfstate storage)"
 }
 
 output "storage_account_id" {
   value       = length(data.azurerm_storage_account.tfstate) > 0 ? data.azurerm_storage_account.tfstate[0].id : ""
   description = "The storage account id if the storage account lookup succeeded"
+}
+
+output "vnet_id" {
+  value       = azurerm_virtual_network.vnet.id
+  description = "The id of the virtual network created for AKS"
+}
+
+output "aks_subnet_id" {
+  value       = azurerm_subnet.aks.id
+  description = "The id of the subnet used by the AKS cluster"
 }

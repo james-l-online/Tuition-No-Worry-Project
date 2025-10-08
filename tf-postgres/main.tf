@@ -28,7 +28,7 @@ resource "azurerm_postgresql_flexible_server" "pg" {
   resource_group_name = var.resource_group_name
   location            = var.location
   # set zone only when provided so we can match existing resources without forcing a change
-  zone                = var.zone != "" ? var.zone : null
+  zone = var.zone != "" ? var.zone : null
 
   administrator_login    = var.administrator_login
   administrator_password = random_password.pg_admin.result
@@ -82,14 +82,14 @@ resource "azurerm_private_dns_a_record" "pg_a" {
   resource_group_name = var.resource_group_name
   ttl                 = 300
   # private_service_connection is a list of objects; ensure 'records' is a list of strings
-  records             = [for c in azurerm_private_endpoint.pg_pe[0].private_service_connection : c.private_ip_address]
+  records = [for c in azurerm_private_endpoint.pg_pe[0].private_service_connection : c.private_ip_address]
 }
 
 // If using public access, create optional firewall rules for allowed IP ranges
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow" {
-  count       = var.public_access ? length(var.allowed_ip_ranges) : 0
-  name        = "allow-${count.index}"
-  server_id   = azurerm_postgresql_flexible_server.pg.id
+  count            = var.public_access ? length(var.allowed_ip_ranges) : 0
+  name             = "allow-${count.index}"
+  server_id        = azurerm_postgresql_flexible_server.pg.id
   start_ip_address = split("/", var.allowed_ip_ranges[count.index])[0]
   end_ip_address   = var.allowed_ip_ranges[count.index]
 }
