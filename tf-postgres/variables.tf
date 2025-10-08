@@ -6,7 +6,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region to create resources in (e.g. eastasia)"
   type        = string
-  default     = "eastasia"
+  default     = "eastus"
 }
 
 variable "server_name" {
