@@ -25,3 +25,14 @@ output "storage_account_id" {
   value       = length(data.azurerm_storage_account.tfstate) > 0 ? data.azurerm_storage_account.tfstate[0].id : ""
   description = "The storage account id if the storage account lookup succeeded"
 }
+
+// Expose VNet and AKS subnet IDs so external scripts can read them via `terraform output -raw`
+output "vnet_id" {
+  value       = azurerm_virtual_network.vnet.id
+  description = "The id of the virtual network created for AKS"
+}
+
+output "aks_subnet_id" {
+  value       = azurerm_subnet.aks.id
+  description = "The id of the subnet used by the AKS cluster"
+}
