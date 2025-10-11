@@ -4,9 +4,9 @@ variable "resource_group_name" {
 }
 
 variable "location" {
-  description = "Azure region to create resources in (e.g. eastasia)"
+  description = "Azure region to create resources in (e.g. eastus)"
   type        = string
-  default     = "eastasia"
+  default     = "eastus"
 }
 
 variable "server_name" {
