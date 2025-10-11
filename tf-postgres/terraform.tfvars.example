@@ -1,0 +1,20 @@
+# Example variable values for tf-postgres
+# Copy to terraform.tfvars or pass with -var-file when running terraform commands
+
+server_name = "tnw-pg-server"
+
+# Example VNet and subnet resource IDs. Replace with your actual IDs.
+vnet_id = "/subscriptions/<subscription-id>/resourceGroups/tnw-rg/providers/Microsoft.Network/virtualNetworks/tnw-vnet"
+pe_subnet_id = "/subscriptions/<subscription-id>/resourceGroups/tnw-rg/providers/Microsoft.Network/virtualNetworks/tnw-vnet/subnets/pe-subnet"
+
+# Optional overrides
+#location = "eastus"
+#administrator_login = "tnw_admin"
+#public_access = false
+#allowed_ip_ranges = []
+#create_k8s_secret = false
+#k8s_namespace = "default"
+#k8s_secret_name = "tnw-database-url"
+#storage_account_name = ""
+#storage_account_rg = ""
+#zone = ""

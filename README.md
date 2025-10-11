@@ -158,3 +158,45 @@ psql "$DATABASE_URL" -f sql/seed-full.sql
 ```
 
 ## 
+
+## Helm deploy examples
+
+If you prefer to deploy to AKS with Helm, here are two common examples.
+
+- In-cluster Postgres (useful for dev/testing):
+
+```pwsh
+# ensure dependencies are available
+helm dependency update ./charts/tuition-no-worry
+
+# install chart with bundled Bitnami Postgres (disable persistence for quick tests)
+helm upgrade --install tnw ./charts/tuition-no-worry -n tnw --create-namespace `
+	--set postgresql.enabled=true `
+	--set postgresql.persistence.enabled=false `
+	--set postgresql.postgresqlPassword='yourpassword' `
+	--set init.enabled=true `
+	--set image.tag=YOUR_IMAGE_TAG `
+	--wait --timeout 5m
+```
+
+- External Postgres (Azure or managed DB): create a Kubernetes secret containing DATABASE_URL or password and enable the init check against the external host.
+
+```pwsh
+# create secret containing the DB password (example)
+kubectl -n tnw create secret generic tnw-db-secret --from-literal=postgresql-password='yourpassword'
+
+helm upgrade --install tnw ./charts/tuition-no-worry -n tnw --create-namespace `
+	--set init.enabled=true `
+	--set init.host='tnw-pg-private-26674.postgres.database.azure.com' `
+	--set init.port=5432 `
+	--set init.user='myuser@servername' `
+	--set init.passwordSecretName=tnw-db-secret `
+	--set init.passwordSecretKey=postgresql-password `
+	--set image.tag=YOUR_IMAGE_TAG `
+	--wait --timeout 5m
+```
+
+Notes:
+- Replace `YOUR_IMAGE_TAG` with your image tag (for example, a Git SHA from CI).
+- For Azure Database for PostgreSQL, when constructing a `DATABASE_URL` secret for the app, ensure the username is URL-encoded (for example `user%40servername`). The `init` container's `user` value does not need percent-encoding; it is passed directly to `pg_isready`.
+
