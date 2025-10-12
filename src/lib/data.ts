@@ -914,9 +914,7 @@ export const announcementsData = [
     date: "2025-01-01",
   },
 ];
-
-
-// YOU SHOULD CHANGE THE DATES OF THE EVENTS TO THE CURRENT DATE TO SEE THE EVENTS ON THE CALENDAR
+// Demo calendar events. Update dates to show current events in development/demo.
 export const calendarEvents = [
   {
     title: "Math",

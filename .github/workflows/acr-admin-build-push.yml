@@ -1,3 +1,4 @@
+# Commented GitHub Actions workflow for review only
 # name: ACR Build and Push (admin)
 
 # on:

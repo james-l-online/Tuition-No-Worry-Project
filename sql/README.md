@@ -1,21 +1,18 @@
-# SQL seed
+# SQL schema and seed files
 
-This folder contains SQL seeds to populate a local development Postgres database.
+Contains the Postgres schema and an idempotent development seed.
 
-Run the seed using the helper Node script (recommended):
+Recommended: use the helper script so large files are streamed to psql:
 
+```bash
+DATABASE_URL='postgres://user:pass@localhost:5432/db' node scripts/run-sql-seed.js
 ```
-DATABASE_URL='postgres://user:pass@localhost:5432/db'
-node scripts/run-sql-seed.js
+
+Alternatively, run directly with psql:
+
+```bash
+psql "$DATABASE_URL" -f sql/seed-full.sql
 ```
 
-Or using psql directly:
-
-```
-psql "$DATABASE_URL" -f sql/seed.sql
-```
-Notes:
-
-- The seed is designed to be idempotent (uses INSERT ... WHERE NOT EXISTS or ON CONFLICT where appropriate).
-- If your schema uses different table/column names than the generated SQL, update `sql/seed.sql` accordingly.
+Warning: Review `sql/seed-full.sql` before running against non-dev databases.
 

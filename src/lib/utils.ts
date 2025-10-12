@@ -1,6 +1,5 @@
-// IT APPEARS THAT BIG CALENDAR SHOWS THE LAST WEEK WHEN THE CURRENT DAY IS A WEEKEND.
-// FOR THIS REASON WE'LL GET THE LAST WEEK AS THE REFERENCE WEEK.
-// IN THE TUTORIAL WE'RE TAKING THE NEXT WEEK AS THE REFERENCE WEEK.
+// Adjust schedule dates so lessons are anchored to the latest Monday.
+// This ensures a consistent reference week for calendar rendering.
 
 const getLatestMonday = (): Date => {
   const today = new Date();

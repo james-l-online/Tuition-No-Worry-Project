@@ -1,8 +1,8 @@
-// Ambient shim to satisfy TypeScript imports of `@prisma/client` after removing Prisma.
-// This provides minimal type placeholders so the codebase continues to compile.
+// Lightweight TypeScript shim for `@prisma/client` to keep the repo compiling
+// while Prisma is removed. These are permissive placeholders for development.
 
 declare module "@prisma/client" {
-  // Minimal common model types used across the app. Add more if the compiler reports missing types.
+  // Minimal model placeholders. Extend if the compiler reports missing types.
   export type Class = any;
   export type Teacher = any;
   export type Student = any;
@@ -20,7 +20,7 @@ declare module "@prisma/client" {
   export type Day = any;
   export type UserSex = any;
 
-  // Export a placeholder PrismaClient class so any `new PrismaClient()` usages (if present) will type-check
+  // Export a placeholder PrismaClient so existing `new PrismaClient()` calls type-check
   export class PrismaClient { constructor(...args:any[]); }
   const db: PrismaClient;
   export default db;

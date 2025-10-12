@@ -3,9 +3,9 @@ set -e
 
 echo "Waiting for postgres:5432 (TCP)…"
 RETRIES=60
-# Use netcat for a plain TCP wait; no SQL, no DB runtime/ORM assumptions.
+# Wait for TCP port using netcat. Simple connectivity check before starting the app.
 until nc -z postgres 5432 >/dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
-  echo "  not ready, retrying…"
+  echo "  not ready, retrying..."
   RETRIES=$((RETRIES-1))
   sleep 2
 done
@@ -22,17 +22,17 @@ if [ -z "${DATABASE_URL:-}" ] \
   fi
 fi
 
-# Print a masked DATABASE_URL for debugging (hide credentials)
+# Print masked DATABASE_URL for diagnostics (credentials hidden)
 if [ -n "${DATABASE_URL:-}" ]; then
-  # extract host portion safely
+  # print host portion for diagnostics (masking credentials)
   DBHOST=$(echo "${DATABASE_URL}" | sed -E 's#.*@([^:/]+).*#\1#' || echo "<unknown>")
   echo "Using DATABASE host: ${DBHOST}"
 fi
 
-# Seeding:
+# Conditional schema/seed application (controlled by SQL_SEED_ON_START)
 
 if [ "${SQL_SEED_ON_START:-false}" = "true" ]; then
-  # First apply schema (if provided), then run the consolidated data seed.
+  # Apply schema (if present), then run the consolidated data seed.
   if [ -f "/app/sql/schema.sql" ]; then
     echo "Applying SQL schema: /app/sql/schema.sql"
     if [ -f "/app/scripts/run-sql-seed.js" ]; then
@@ -40,7 +40,7 @@ if [ "${SQL_SEED_ON_START:-false}" = "true" ]; then
     elif command -v psql >/dev/null 2>&1; then
       psql "$DATABASE_URL" -f /app/sql/schema.sql || true
     else
-      echo "No SQL runner (node script or psql) available; skipping schema apply."
+  echo "No SQL runner (node or psql) available; skipping schema apply."
     fi
   else
     echo "No /app/sql/schema.sql found; skipping schema apply."
@@ -53,7 +53,7 @@ if [ "${SQL_SEED_ON_START:-false}" = "true" ]; then
     elif command -v psql >/dev/null 2>&1; then
       psql "$DATABASE_URL" -f /app/sql/seed-full.sql || true
     else
-      echo "No SQL runner (node script or psql) available; skipping SQL seed."
+  echo "No SQL runner (node or psql) available; skipping SQL seed."
     fi
   else
     echo "No /app/sql/seed-full.sql found; skipping SQL seed."
