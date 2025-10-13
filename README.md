@@ -1,202 +1,49 @@
-# To Run as Docker Container
+# 🏫 Tuition Centre CMS (Capstone Project)
 
-## Prerequisites
+### ⚙️ Overview
 
-- **Docker Desktop** 4.x+ (includes Compose v2)
+This repository hosts a **containerized Tuition Centre Content Management System (CMS)** — developed as part of my DevOps capstone project.
 
----
+It demonstrates both **local development using Docker Compose** and a **production-grade Azure Kubernetes Service (AKS)** deployment pipeline built with **Terraform, GitHub Actions, and Helm**.
 
-# 1) Register and setup app in Clerk
-
-**Register for [Clerk Account](https://clerk.com/)**
-
-- **Docker Compose example**
-
-Replace values with your own in a local `.env` (do not commit secrets). Example placeholder:
-
-```sh
-DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
-```
+> 🔍 If you’re reviewing this for DevOps, CI/CD, or Cloud Engineering skills — start with the AKS version below.
 
 ---
 
-## **Create Test Users in Clerk**
+### 🚀 Quick Links
 
-- Go to "Users" in Clerk dashboard.
-- Create users for role: `admin`
-- In each user, go into Profile.
-   Scroll down to Metadata, then edit Public
-- Set `public_metadata` for user:
+| Environment                       | Description                                                                                          | Link                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 🧩 **Local Dev (Docker Compose)** | Run the app locally on your machine with PostgreSQL (persistent volume). Ideal for testing the app logic. | 👉 [README_local.md setup](README_local.md)                                   |
+| ☁️ **Cloud DevOps (ACR + AKS)**  | Full-scale DevOps workflow — Terraform-provisioned infrastructure, GitHub Actions CI/CD, Helm deployment, and Azure Managed Identity security. | 👉 [**View the full AKS DevOps setup → README_ACR_AKS.md**](README_ACR_AKS.md) |
 
-```yaml
-{
-"role": "admin"
-}
-```
----
-
-## **Configure Clerk Session Claims**
-
-- Go to Clerk dashboard → Configure → Session Management → Customize session token
-- Add under Claims:
-
-```yaml
-{
-	"publicMetadata": {
-		"role": "{{user.public_metadata.role}}"
-	}
-}
-```
-## **Get Clerk API Keys**
-
-- In Clerk dashboard —> configure —> API keys —> Publishable Key / Secret Key.
----
-
-## 2) Configure environment variables
-
-Create a **`.env`** at the repo root: (rename the provided .env.example to .env to use)
-
-```sh
-# Copy this file to .env and fill in values for local development
-# Do NOT commit real credentials. .env is in .gitignore.
-
-# Postgres credentials used by docker-compose
-POSTGRES_USER=myuser
-POSTGRES_PASSWORD=mypassword
-POSTGRES_DB=mydb
-
-# App database URL (Postgres)
-# DATABASE_URL=postgresql://myuser:mypassword@postgres:5432/mydb
-DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>?schema=public&sslmode=disable
-
-# Clerk (auth) keys 
-CLERK_SECRET_KEY= [add your secret key here]
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= [add your publishable key here]
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/
-
-# Seeds: enable SQL seeding on container start (development only)
-SQL_SEED_ON_START=false
-
-## Database changes (Prisma deprecated)
-
-This project is moving away from Prisma due to runtime issues in AKS. The repo now includes plain SQL migrations and seeds under `sql/` and a lightweight Postgres helper at `src/lib/db.ts`.
-
-How to run locally:
-
-1. Ensure `DATABASE_URL` is set (Postgres connection string).
-2. Create schema: `psql "$DATABASE_URL" -f sql/schema.sql`
-3. Seed: `psql "$DATABASE_URL" -f sql/seed-full.sql`
-
-Alternatively you can run the included Node helper which reads `DATABASE_URL`:
-
-PowerShell
-
-$env:DATABASE_URL = 'postgres://user:pass@localhost:5432/db'
-node scripts/run-sql-seed.js sql/schema.sql
-node scripts/run-sql-seed.js sql/seed-full.sql
-
-See `sql/README.md` for more details.
-
-API routes: Basic CRUD API routes are being added under `src/app/api/*` (example: `src/app/api/teachers`).
-
-If you previously relied on `prisma/seed.ts` or other Prisma-based code, see `src/lib/prisma.ts` which now throws in production and instructs developers to migrate call sites to `src/lib/db.ts`.
-
-# If you need the container to chown mounted files on startup (development only)
-# CHOWN_ON_STARTUP=false
-```
+> ⚡ The AKS version showcases:
+>
+> - Infrastructure as Code (Terraform)
+> - CI/CD automation via GitHub Actions
+> - Secure image pull using Managed Identity
+> - Private Endpoint networking (PostgreSQL)
+> - Scalable multi-node AKS design for up to 100k users
 
 ---
 
-## Docker dev note: file ownership (important)
+### 📘 Project Summary
 
-This project runs the app as a non-root container user (UID 1000)
-
-If you prefer an init chown step instead of changing host ownership, see `docker/README.md` for an optional
-init-chown pattern (dev only).
-
-## 3) Build & run
-
-```bash
-# from repo root
-docker compose build --no-cache
-docker compose up -d
-```
-
-- To run app, open in browser:
-
-```powershell
-http://localhost:3000/
-```
-
-login with your created clerk account earlier
+| Category                 | Tech Used                          |
+| ------------------------ | ---------------------------------- |
+| **App Layer**            | Next.js containerized CMS          |
+| **Local Runtime**        | Docker Compose (with PostgreSQL)   |
+| **Cloud Deployment**     | AKS + ACR + Terraform + Helm       |
+| **CI/CD Pipeline**       | GitHub Actions                     |
+| **Security**             | UAMI, Private Endpoints            |
+| **Monitoring (Planned)** | Azure Monitor, Prometheus, Grafana |
 
 ---
 
-## Running the consolidated SQL seed (docker)
+### My Role
 
-This repository includes a single consolidated SQL file `sql/seed-full.sql` which applies the necessary
-type-conversion ALTERs (uuid -> text for some id columns) and then inserts the large idempotent dev seed.
-
-Important: The ALTERs in `sql/seed-full.sql` are irreversible and intended for development only. Do NOT run
-this file against production. Back up your database before running.
-
-To run the consolidated seed automatically during container startup, enable the env var in `.env` or `docker-compose.yml`:
-
-```env
-SQL_SEED_ON_START=true
-```
-
-When enabled the container entrypoint will run `/app/scripts/run-sql-seed.js /app/sql/seed-full.sql` after the
-DB becomes available. You can also run it manually from your host (requires `psql` or the node runner):
-
-```bash
-export DATABASE_URL='postgresql://tnw_user:tnw_pass@127.0.0.1:5432/tuition_dev?schema=public&sslmode=disable'
-node scripts/run-sql-seed.js sql/seed-full.sql
-
-# Or using psql (if installed)
-psql "$DATABASE_URL" -f sql/seed-full.sql
-```
-
-## 
-
-## Helm deploy examples
-
-If you prefer to deploy to AKS with Helm, here are two common examples.
-
-- In-cluster Postgres (useful for dev/testing):
-
-```pwsh
-# ensure dependencies are available
-helm dependency update ./charts/tuition-no-worry
-
-# install chart with bundled Bitnami Postgres (disable persistence for quick tests)
-helm upgrade --install tnw ./charts/tuition-no-worry -n tnw --create-namespace `
-	--set postgresql.enabled=true `
-	--set postgresql.persistence.enabled=false `
-	--set postgresql.postgresqlPassword='yourpassword' `
-	--set init.enabled=true `
-	--set image.tag=YOUR_IMAGE_TAG `
-	--wait --timeout 5m
-```
-
-- External Postgres (Azure or managed DB): create a Kubernetes secret containing DATABASE_URL or password and enable the init check against the external host.
-
-```pwsh
-# create secret containing the DB password (example)
-kubectl -n tnw create secret generic tnw-db-secret --from-literal=postgresql-password='yourpassword'
-
-helm upgrade --install tnw ./charts/tuition-no-worry -n tnw --create-namespace `
-	--set init.enabled=true `
-	--set init.host='tnw-pg-private-26674.postgres.database.azure.com' `
-	--set init.port=5432 `
-	--set init.user='myuser@servername' `
-	--set init.passwordSecretName=tnw-db-secret `
-	--set init.passwordSecretKey=postgresql-password `
-	--set image.tag=YOUR_IMAGE_TAG `
-	--wait --timeout 5m
-```
-
-Notes:
-- Replace `YOUR_IMAGE_TAG` with your image tag (for example, a Git SHA from CI).
-- For Azure Database for PostgreSQL, when constructing a `DATABASE_URL` secret for the app, ensure the username is URL-encoded (for example `user%40servername`). The `init` container's `user` value does not need percent-encoding; it is passed directly to `pg_isready`.
-
+- Designed and authored all Terraform modules (ACR, AKS, IAM, PostgreSQL, storage backend).
+- Implemented CI/CD workflow with GitHub Actions and Helm deployment automation.
+- Configured AKS Managed Identity for secure image pulls (AcrPull role).
+- Troubleshot networking and DNS issues for Private Endpoint integration.
+- Produced detailed documentation to reflect **enterprise DevSecOps practice**

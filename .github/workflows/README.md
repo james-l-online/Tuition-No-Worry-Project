@@ -48,8 +48,7 @@ Quick notes on each workflow
 
 - `ci-deploy-acr-aks.yml` (commented demo):
   - Full pipeline demo: checkout, build, push, and deploy. Requires careful secret management and cluster creds.
-Notes
-- `secret-scan.yml` runs `gitleaks` to detect accidental secret commits (uses `GITHUB_TOKEN`).
+
 
 Security checklist before enabling workflows
 - Store sensitive values in repository or organization secrets.
