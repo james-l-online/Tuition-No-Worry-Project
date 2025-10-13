@@ -328,7 +328,7 @@ STORAGE_ACCOUNT_RG=$(terraform output -raw resource_group_name || echo "$STORAGE
 STORAGE_ACCOUNT_CONNSTR=$(terraform output -raw storage_account_primary_connection_string)
 ```
 
-![tnw-storage-rg creation completed](images/image.png)
+![tnw-storage-rg creation completed](./images/image.png)
 
 tnw-storage-rg creation completed
 
@@ -348,7 +348,7 @@ UAMI_ID=$(terraform output -raw uami_id | tr -d '\r' | xargs)
 UAMI_PRINCIPAL_ID=$(terraform output -raw uami_principal_id | tr -d '\r' | xargs)
 ```
 
-![uami creation completed](images/image 1.png)
+![uami creation completed](./images/image 1.png)
 
 uami creation completed
 
@@ -379,7 +379,7 @@ VNET_ID=$(terraform output -raw vnet_id | tr -d '\r' | xargs)
 AKS_SUBNET_ID=$(terraform output -raw aks_subnet_id | tr -d '\r' | xargs)
 ```
 
-![az storage container creation completed](images/image 2.png)
+![az storage container creation completed](./images/image 2.png)
 
 az storage container creation completed
 
@@ -388,11 +388,11 @@ Notes:
 - AKS is created with a user-assigned identity attached; this UAMI will be used to pull from ACR.
 - Ensure AKS has system-managed identity enabled if you need it; current setup attaches UAMI for image pull.
 
-![AKS creation](images/image 3.png)
+![AKS creation](./images/image 3.png)
 
 AKS creation
 
-![AKS creation completed](images/image 4.png)
+![AKS creation completed](./images/image 4.png)
 
 AKS creation completed
 
@@ -421,11 +421,11 @@ ACR_ID=$(terraform -chdir=../tf-acr output -raw acr_resource_id)
 ACR_LOGIN=$(terraform -chdir=../tf-acr output -raw acr_login_server)
 ```
 
-![ACR creation](images/image 5.png)
+![ACR creation](./images/image 5.png)
 
 ACR creation
 
-![ACR creation completed](images/image 6.png)
+![ACR creation completed](./images/image 6.png)
 
 ACR creation completed
 
@@ -442,7 +442,7 @@ terraform apply -auto-approve \
   -var="acr_resource_id=$ACR_ID"
 ```
 
-![ACRpull assignment completed](images/image 7.png)
+![ACRpull assignment completed](./images/image 7.png)
 
 ACRpull assignment completed
 
@@ -455,7 +455,7 @@ ACR_ID=$(terraform -chdir=../tf-acr output -raw acr_resource_id)
 az role assignment list --assignee "$UAMI_PRINCIPAL_ID" --scope "$ACR_ID" -o table
 ```
 
-![Verification of ACRpull](images/image 8.png)
+![Verification of ACRpull](./images/image 8.png)
 
 Verification of ACRpull
 
@@ -491,7 +491,7 @@ VNET_NAME="tnw-vnet"
 az network vnet subnet list -g $RG --vnet-name $VNET_NAME --query '[].{name:name,id:id,addr:addressPrefix}' -o table
 ```
 
-![aks-subnet check](images/image 9.png)
+![aks-subnet check](./images/image 9.png)
 
 aks-subnet check
 
@@ -521,11 +521,11 @@ terraform apply -auto-approve \
   -var="create_k8s_secret=false"
 ```
 
-![PostgreSQL server creation](images/image 10.png)
+![PostgreSQL server creation](./images/image 10.png)
 
 PostgreSQL server creation
 
-![PostgreSQL server creation completed.](images/image 11.png)
+![PostgreSQL server creation completed.](./images/image 11.png)
 
 PostgreSQL server creation completed.
 
@@ -538,7 +538,7 @@ DB_URL=$(terraform output -raw postgresql_database_url)
 
 All resources in AZ portal at this point:
 
-![all resources in AZ portal](images/image 12.png)
+![all resources in AZ portal](./images/image 12.png)
 
 all resources in AZ portal
 
@@ -565,7 +565,7 @@ kubectl config current-context
 kubectl get nodes
 ```
 
-![setting up connection to k8s node’s `kubectl`](images/image 13.png)
+![setting up connection to k8s node’s `kubectl`](./images/image 13.png)
 
 setting up connection to k8s node’s `kubectl`
 
@@ -585,11 +585,11 @@ kubectl create secret generic tnw-clerk-secret \
   --from-literal=CLERK_SECRET_KEY='sk_secret-***********************' -n tnw
 ```
 
-![secret for database completed](images/image 14.png)
+![secret for database completed](./images/image 14.png)
 
 secret for database completed
 
-![secret for clerk (authentication needed by app) completed](images/image 15.png)
+![secret for clerk (authentication needed by app) completed](./images/image 15.png)
 
 secret for clerk (authentication needed by app) completed
 
@@ -659,19 +659,19 @@ exit
 exit
 ```
 
-![jump vm creation](images/image 16.png)
+![jump vm creation](./images/image 16.png)
 
 jump vm creation
 
-![ssh into jump vm](images/image 17.png)
+![ssh into jump vm](./images/image 17.png)
 
 ssh into jump vm
 
-![create and confirm user `myuser` and db of `mydb`](images/image 18.png)
+![create and confirm user `myuser` and db of `mydb`](./images/image 18.png)
 
 create and confirm user `myuser` and db of `mydb`
 
-![granting privileges to `myuser`](images/image 19.png)
+![granting privileges to `myuser`](./images/image 19.png)
 
 granting privileges to `myuser`
 
@@ -699,15 +699,15 @@ docker build -t "$FULL_IMAGE" .
 docker push "$FULL_IMAGE"
 ```
 
-![prepping vars for docker image build for ACR](images/image 20.png)
+![prepping vars for docker image build for ACR](./images/image 20.png)
 
 prepping vars for docker image build for ACR
 
-![logging into ACR and building image](images/image 21.png)
+![logging into ACR and building image](./images/image 21.png)
 
 logging into ACR and building image
 
-![image pushed to ACR](images/image 22.png)
+![image pushed to ACR](./images/image 22.png)
 
 image pushed to ACR
 
@@ -719,7 +719,7 @@ image pushed to ACR
 az aks update -n <AKS_NAME> -g <RESOURCE_GROUP> --attach-acr <ACR_NAME>
 ```
 
-![connecting ACR to AKS](images/image 23.png)
+![connecting ACR to AKS](./images/image 23.png)
 
 connecting ACR to AKS
 
@@ -748,7 +748,7 @@ helm upgrade --install tnw ./charts/tuition-no-worry \
   --dry-run --debug
 ```
 
-![debug pod created to check](images/image 24.png)
+![debug pod created to check](./images/image 24.png)
 
 debug pod created to check
 
@@ -767,7 +767,7 @@ helm upgrade --install tnw ./charts/tuition-no-worry \
 
 ## 🧭 Troubleshooting & Decision Log
 
-![example of an initial issue faced during deployment](images/image 25.png)
+![example of an initial issue faced during deployment](./images/image 25.png)
 
 example of an initial issue faced during deployment
 
@@ -819,15 +819,15 @@ This approach allowed the full DevOps flow (Docker → ACR → AKS → Applicati
 
 (after logging in)
 
-![testing site to confirm deployment success](images/image 26.png)
+![testing site to confirm deployment success](./images/image 26.png)
 
 testing site to confirm deployment success
 
-![service details of cluster](images/image 27.png)
+![service details of cluster](./images/image 27.png)
 
 service details of cluster
 
-![confirm stability of pods with no restarts](images/image 28.png)
+![confirm stability of pods with no restarts](./images/image 28.png)
 
 confirm stability of pods with no restarts
 
