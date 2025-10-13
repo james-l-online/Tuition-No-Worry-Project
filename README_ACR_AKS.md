@@ -148,6 +148,8 @@ jobs:
 
 ## 🌐 Future-State AKS Architecture (Proposed Design)
 
+![Proposed Architecture Solution](./images/full.png)
+
 <details>
 <summary><b>🧭 Key Design Highlights (Click to Expand)</b></summary>
 
