@@ -119,7 +119,7 @@ Automated pipeline stages:
 4. 🚢 **Deploy** – Deploy to AKS using Helm
 
 <details>
-<summary><b>🧩 Example GitHub Actions Workflow</b></summary>
+<summary><b>🧩 Example GitHub Actions Workflow (Click to expand)</b></summary>
 
 ```yaml
 name: CI-CD Pipeline
@@ -298,7 +298,7 @@ Follow this order to provision resources and deploy the app
 
 # 🧭 Setup Steps
 <details>
-<summary><b> (Click to Expand)</b></summary>
+<summary><b> >>>>> (Click to Expand) <<<<< </b></summary>
 
 ### 1) `tf-aks-storage` (`tfstate` + storage RG)
 
