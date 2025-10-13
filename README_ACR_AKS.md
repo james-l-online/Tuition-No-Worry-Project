@@ -1,4 +1,4 @@
-# README_ACR_AKS
+#README_ACR_AKS
 
 # 🎓 Capstone Project: Tuition Centre CMS on Azure Kubernetes Service (AKS)
 
@@ -9,10 +9,8 @@ This repository demonstrates an end-to-end **DevOps and DevSecOps workflow** for
 It simulates how an enterprise would provision infrastructure, automate deployments, and enforce security at scale using **Terraform, Helm, GitHub Actions, and Azure services**.
 
 > 🔍 Focus: Cloud-native DevOps automation — not app logic.
-> 
-> 
+>
 > The goal is to showcase secure CI/CD, IaC, and AKS deployment patterns aligned with production-grade Azure environments.
-> 
 
 ---
 
@@ -52,23 +50,23 @@ Proposed a **multi-node, production-grade AKS design** with Front Door + WAF, Ap
 
 ### 🧱 Tech Stack Summary
 
-| Category | Tools & Services |
-| --- | --- |
-| **Cloud** | Azure (AKS, ACR, Front Door, App Gateway, Key Vault, Monitor) |
-| **IaC** | Terraform (modular, remote backend) |
-| **CI/CD** | GitHub Actions (build, scan, deploy) |
-| **Orchestration** | Helm, Kubernetes |
-| **Security** | UAMI, tfsec, Trivy, OPA/Conftest, Private Endpoints |
-| **Monitoring** | Prometheus, Grafana, Azure Monitor |
-| **App Layer** | Next.js (containerized microservice demo) |
+| Category          | Tools & Services                                              |
+| ----------------- | ------------------------------------------------------------- |
+| **Cloud**         | Azure (AKS, ACR, Front Door, App Gateway, Key Vault, Monitor) |
+| **IaC**           | Terraform (modular, remote backend)                           |
+| **CI/CD**         | GitHub Actions (build, scan, deploy)                          |
+| **Orchestration** | Helm, Kubernetes                                              |
+| **Security**      | UAMI, tfsec, Trivy, OPA/Conftest, Private Endpoints           |
+| **Monitoring**    | Prometheus, Grafana, Azure Monitor                            |
+| **App Layer**     | Next.js (containerized microservice demo)                     |
 
 ---
 
 ### 🗺️ Architecture Summary (Demo vs Future State)
 
-| Environment | Description |
-| --- | --- |
-| **Demo (Current)** | Single-node AKS cluster running containerized CMS with in-cluster PostgreSQL (Bitnami Helm chart). |
+| Environment                 | Description                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Demo (Current)**          | Single-node AKS cluster running containerized CMS with in-cluster PostgreSQL (Bitnami Helm chart).   |
 | **Proposed (Future State)** | Multi-node AKS with managed PostgreSQL Flexible Server (Private Link), Front Door + WAF, Key Vault, and full observability stack for 100K users. |
 
 ---
@@ -94,12 +92,10 @@ terraform apply "tfplan"
 ```
 
 > 💡 Best Practice: Always review with terraform plan before applying.
-> 
 
 </details>
 
 > 📘 For full technical walkthrough, Terraform modules, and troubleshooting logs — see below.
-> 
 
 ---
 
@@ -110,7 +106,6 @@ Originally, the goal was to use **Azure Database for PostgreSQL Flexible Server*
 However, due to private-network constraints in the sandbox, an **in-cluster Bitnami PostgreSQL** was used to preserve functionality while maintaining secure architecture intent.
 
 > 🧩 This pivot highlights real-world decision-making under constraints — balancing time, cost, and functionality.
-> 
 
 ---
 
@@ -215,7 +210,6 @@ Documented real-world debugging of **AKS ↔ PostgreSQL private endpoint** failu
 Final pivot to **in-cluster PostgreSQL** stabilized demo and preserved full DevOps workflow (Docker → ACR → AKS → Helm).
 
 > 🎯 Reinforces problem-solving mindset essential for production DevOps environments.
-> 
 
 ---
 
@@ -253,7 +247,6 @@ cd tf-iam && terraform destroy -auto-approve
 ---
 
 > 🧠 This project extends beyond coursework to demonstrate real-world DevOps thinking — automation, security, scalability, and iterative improvement.
-> 
 
 ---
 
@@ -303,8 +296,9 @@ az provider register --namespace Microsoft.Authorization
 
 Follow this order to provision resources and deploy the app
 
+# 🧭 Setup Steps
 <details>
-<summary><b>🧭 Setup Steps (Click to Expand)</b></summary>
+<summary><b> (Click to Expand)</b></summary>
 
 ### 1) `tf-aks-storage` (`tfstate` + storage RG)
 
@@ -466,12 +460,10 @@ Verification of ACRpull
 Database setup was eventually changed to in-cluster Bitnami Postgres for Demo
 
 > The intended setup for this project uses **Azure Database for PostgreSQL Flexible Server** with a **Private Endpoint** to demonstrate secure, production-grade networking.
-> 
-> 
+>
 > However, due to private networking constraints and time limitations, the live demo uses an **in-cluster Bitnami PostgreSQL Helm chart** to simulate the database connection within AKS.
-> 
+>
 > This substitution preserves functional correctness of the deployment (Docker → ACR → AKS pipeline) while maintaining realistic architecture flow.
-> 
 
 Note: The steps I took are laid out here as per my encounter, until the later decision to switch to the in-cluster PostgreSQL
 
@@ -786,18 +778,23 @@ However, application pods within AKS were unable to establish a connection using
 During deployment to AKS I encountered multiple environment-specific issues; I list the important ones in order, and explain the final decision to use an in-cluster Postgres for the demo.
 
 Initial problems
+
 Image pull and container runtime issues on some nodes while pulling from ACR (fix: ensure AKS can pull from ACR or attach ACR to the cluster).
 
 **Missing secrets:** 
 
 the app expects several runtime secrets (Clerk keys, DB credentials). Missing publishable keys produced 500s and middleware errors until the **`tnw-clerk-secret`** was created.
+
 **Postgres & readiness issues:**
+
 The app container started before Postgres was reachable. To avoid race conditions I added an `initContainer (pg_isready)` so the app waits for `Postgres port:5432`.
 
 Seeding never ran in the cloud: 
 
 `entrypoint` logic depends on environment and secrets; initially the app attempted to connect to an Azure-managed Postgres and failed.
+
 Secret naming and password mismatch:
+
 Helm/Bitnami produced a secret with keys different from what the app expected (e.g., postgres-password vs postgresql-password). This required harmonizing secret keys or making the app/helm chart read the generated keys.
 
 Password authentication failed against the Azure server (FATAL 28P01). I attempted in-cluster fixes (patching secrets, ALTER USER), but the Azure admin/password semantics and username format (user@server) complicated things.
@@ -813,7 +810,6 @@ A **Bitnami PostgreSQL Helm chart** was deployed inside the AKS cluster under th
 This approach allowed the full DevOps flow (Docker → ACR → AKS → Application) to remain operational while preserving the architectural intent of a secure, isolated database.
 
 > 🧩 This change reflects an engineering trade-off made for demonstration purposes while retaining realistic cloud-native deployment principles.
-> 
 
 **Screenshots / Evidence:**
 
@@ -869,9 +865,8 @@ Revisit integration with **Azure Database for PostgreSQL Flexible Server** using
 
 - **Private Endpoint** and **Private DNS Zone Link** for network-isolated access from AKS.
 - **User-Assigned Managed Identity (UAMI)** for secure connection string retrieval from Azure Key Vault.
-    
+
     This will fully align the deployment with enterprise-grade security and PDPA compliance.
-    
 
 ---
 
