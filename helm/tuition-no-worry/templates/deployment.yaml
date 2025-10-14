@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tuition-no-worry.fullname" . }}
+  labels:
+    {{- include "tuition-no-worry.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "tuition-no-worry.fullname" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "tuition-no-worry.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.init.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}"
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+          {{- /* Provide password from secret if available. If not set, but postgresql subchart is enabled, use the generated secret */}}
+          env:
+            {{- if or .Values.init.passwordSecretName .Values.postgresql.enabled }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.init.passwordSecretName }}{{ .Values.init.passwordSecretName }}{{ else }}{{ printf "%s-postgresql" .Release.Name }}{{ end }}
+                  key: {{ .Values.init.passwordSecretKey }}
+            {{- end }}
+          command:
+            - sh
+            - -c
+            - |
+              host={{- if .Values.init.host -}}{{ .Values.init.host -}}{{- else if .Values.postgresql.enabled -}}{{ printf "%s-postgresql.%s.svc.cluster.local" .Release.Name .Release.Namespace -}}{{- else -}}{{ .Values.init.host -}}{{- end }}
+              port={{ .Values.init.port }}
+              user='{{ .Values.init.user }}'
+              retries={{ .Values.init.retries }}
+              sleep={{ .Values.init.sleepSeconds }}
+              n=0
+              until [ $n -ge $retries ]; do
+                if [ -n "$user" ]; then
+                  pg_isready -h $host -p $port -U $user && exit 0 || true
+                else
+                  pg_isready -h $host -p $port && exit 0 || true
+                fi
+                n=$((n+1))
+                sleep $sleep
+              done
+              echo "postgres not ready after $retries attempts" && exit 1
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              name: http
+          envFrom:
+            {{- range $s := .Values.env.envFromSecrets }}
+            - secretRef:
+                name: {{ $s }}
+            {{- end }}
+
+          {{- /* Determine if we need an env: block (explicit envVars, generated DATABASE_URL, or SQL seeding flag) */}}
+          {{- $hasEnvVars := gt (len .Values.env.envVars) 0 }}
+          {{- $willGenDB := and .Values.postgresql .Values.postgresql.enabled }}
+          {{- $wantEnv := or $hasEnvVars $willGenDB .Values.sqlSeedOnStart }}
+          {{- if $wantEnv }}
+          env:
+            {{- if $hasEnvVars }}
+            {{- range $e := .Values.env.envVars }}
+            - name: {{ $e.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $e.secretName }}
+                  key: {{ $e.secretKey }}
+            {{- end }}
+            {{- end }}
+
+            {{- /* If using the bundled postgresql subchart, prefer exposing POSTGRES_* from the generated secret */}}
+            {{- if $willGenDB }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.postgresqlUsername | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.postgresqlDatabase | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-postgresql" .Release.Name }}
+                  key: postgresql-password
+            {{- else }}
+            {{- /* If not using in-cluster Postgres, generate DATABASE_URL only when not explicitly provided */}}
+            {{- $hasDBEnv := false }}
+            {{- range $e := .Values.env.envVars }}
+              {{- if eq $e.name "DATABASE_URL" }}
+                {{- $hasDBEnv = true }}
+              {{- end }}
+            {{- end }}
+            {{- if and (not $willGenDB) (not $hasDBEnv) }}
+            - name: DATABASE_URL
+              value: >-
+                postgresql://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.postgresql.service.port | default 5432 }}/{{ .Values.postgresql.postgresqlDatabase }}?sslmode=disable
+            {{- end }}
+            {{- end }}
+            {{- if .Values.sqlSeedOnStart }}
+            - name: SQL_SEED_ON_START
+              value: "true"
+            {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

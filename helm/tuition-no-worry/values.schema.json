@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "tuition-no-worry values schema",
+  "type": "object",
+  "properties": {
+    "replicaCount": { "type": "integer" },
+    "containerPort": { "type": "integer" },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string" },
+        "tag": { "type": "string" },
+        "pullPolicy": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "imagePullSecrets": { "type": "array", "items": { "type": "string" } },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "port": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "resources": { "type": ["object", "null"] },
+    "ingress": { "type": ["object", "null"] },
+    "env": {
+      "type": "object",
+      "properties": {
+        "envFromSecrets": { "type": "array", "items": { "type": "string" } },
+        "envVars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "secretName": { "type": "string" },
+              "secretKey": { "type": "string" }
+            },
+            "required": ["name", "secretName", "secretKey"],
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array" },
+    "affinity": { "type": "object" },
+    "postgresql": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "postgresqlDatabase": { "type": "string" },
+        "postgresqlUsername": { "type": "string" },
+        "postgresqlPassword": { "type": "string" },
+        "service": {
+          "type": "object",
+          "properties": {
+            "port": { "type": "integer" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "init": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": { "type": "string" },
+            "tag": { "type": "string" },
+            "pullPolicy": { "type": "string" }
+          },
+          "additionalProperties": true
+        },
+        "host": { "type": "string" },
+        "port": { "type": "integer" },
+        "user": { "type": "string" },
+        "passwordSecretName": { "type": "string" },
+        "passwordSecretKey": { "type": "string" },
+        "retries": { "type": "integer" },
+        "sleepSeconds": { "type": "integer" }
+      },
+      "additionalProperties": true
+    }
+    ,
+    "clerk": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "publishableKey": { "type": "string" },
+        "secretKey": { "type": "string" },
+        "signInUrl": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+    ,
+    "sqlSeedOnStart": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

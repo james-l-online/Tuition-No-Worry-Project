@@ -1,0 +1,7 @@
+1. Get the application URL by running these commands:
+
+  kubectl get svc -l app.kubernetes.io/name=tuition-no-worry -n {{ .Release.Namespace }}
+
+2. To uninstall the chart:
+
+  helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}

@@ -1,0 +1,96 @@
+# Example Helm values for the Tuition No Worry chart.
+# Copy this to a new file (e.g. secrets-values.yaml) and set environment-specific values.
+"$schema": ./values.schema.json
+replicaCount: 1
+
+# The container port the application listens on
+containerPort: 3000
+
+image:
+  repository: "<ACR_LOGIN_SERVER>/tuition-no-worry" # e.g. myregistry.azurecr.io/tuition-no-worry
+  tag: "<IMAGE_TAG_OR_SHA>"                         # e.g. latest or d15c8c56
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+service:
+  type: LoadBalancer
+  # Kubernetes service port (forwards to containerPort)
+  port: 3000
+
+resources: {}
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths: ["/"]
+  tls: []
+
+# Environment configuration: secrets and explicit env mappings
+env:
+  # Secrets mounted with envFrom (list of secret names)
+  envFromSecrets:
+    - tnw-database-url
+    - tnw-clerk-secret
+  # explicit env var mappings from secrets
+  envVars:
+    - name: CLERK_SECRET
+      secretName: tnw-clerk-secret
+      secretKey: CLERK_SECRET_KEY
+
+# Clerk configuration. When enabled, Helm can create a secret for Clerk keys.
+# Do not commit production secrets; use CI/CD secret injection or an external
+# secret manager for production deployments.
+clerk:
+  enabled: false
+  # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  publishableKey: "<YOUR_CLERK_PUBLISHABLE_KEY>"
+  # CLERK server secret key
+  secretKey: "<YOUR_CLERK_SECRET_KEY>"
+  # NEXT_PUBLIC_CLERK_SIGN_IN_URL
+  signInUrl: "/"
+
+  # Toggle running SQL seed on container start. When true, the image entrypoint
+  # will apply the schema and run the consolidated seed. Prefer a Job in prod.
+  sqlSeedOnStart: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Optional in-cluster Postgres (Bitnami). Enable for local/dev use only.
+postgresql:
+  enabled: true
+  postgresqlDatabase: mydb
+  postgresqlUsername: myuser
+  postgresqlPassword: "<CHOOSE_A_STRONG_PASSWORD>" # replace locally; do not commit
+  service:
+    port: 5432
+
+# Init container that waits for Postgres readiness before starting the app.
+# When enabled, set `init.host` for an external DB or enable the bundled
+# `postgresql` subchart to target the in-cluster service.
+init:
+  enabled: false
+  # Image that provides `pg_isready` (postgres client). Override if needed.
+  image:
+    repository: "postgres"
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  # Host to check. If empty and postgresql.enabled==true, the template will
+  # target '<release>-postgresql.<namespace>.svc.cluster.local'.
+  host: ""
+  port: 5432
+  # Optional username to pass to pg_isready (-U). If unset, pg_isready does a
+  # simple connectivity check.
+  user: ""
+  # Optional secret with the password. If empty and using the bundled
+  # postgresql subchart, the generated '<release>-postgresql' secret is used
+  # and the key 'postgresql-password' is read.
+  passwordSecretName: ""
+  passwordSecretKey: "postgresql-password"
+  # Retry behaviour
+  retries: 30
+  sleepSeconds: 2
